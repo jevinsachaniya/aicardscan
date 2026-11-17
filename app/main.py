@@ -38,18 +38,15 @@ SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Pre-warm OCR and NLP models on startup for responsive initial turn (Render 512MB optimized)."""
-    logger.info("Initializing CardLens AI application models...")
+    """Render 512MB optimized startup: bind port instantly without blocking."""
+    logger.info("Starting CardLens AI web service...")
     try:
         import torch
-        # Set 1 thread to avoid memory spikes under 512MB limit
         torch.set_num_threads(1)
-        # Pre-initialize and warm up singletons
-        ocr = get_ocr_service()
-        nlp = get_nlp_classifier()
-        logger.info(f"System ready! OCR: {ocr.engine_name}, NLP: {nlp.ner_model_name}, Device: {ocr.device}")
-    except Exception as e:
-        logger.warning(f"Background pre-warm notice: {e}")
+        if hasattr(torch, "set_grad_enabled"):
+            torch.set_grad_enabled(False)
+    except Exception:
+        pass
     yield
     logger.info("CardLens AI application shutting down.")
 

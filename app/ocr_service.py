@@ -51,15 +51,11 @@ class LocalOCRService:
             import os
             # Set 1 thread to minimize RAM consumption under Render 512MB limit
             torch.set_num_threads(1)
+            if hasattr(torch, "set_grad_enabled"):
+                torch.set_grad_enabled(False)
             gpu_flag = (self.device == "cuda")
             logger.info(f"Initializing EasyOCR reader on device: {self.device} (GPU={gpu_flag})...")
             self.reader = easyocr.Reader(['en'], gpu=gpu_flag, verbose=False)
-            # Warm up reader with a small dummy array to avoid first-call latency
-            try:
-                dummy = np.zeros((64, 64, 3), dtype=np.uint8)
-                self.reader.readtext(dummy, canvas_size=640, mag_ratio=1.0, batch_size=1)
-            except Exception:
-                pass
             self.is_ready = True
             logger.info("EasyOCR engine successfully initialized.")
         except Exception as e:

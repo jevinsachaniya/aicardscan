@@ -1,0 +1,272 @@
+/* ==========================================================================
+   CardScan Pro - Modern Clean Minimal SaaS Theme
+   Fully Responsive for Desktop, Tablet, and Mobile Screens
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Clean Light SaaS Palette */
+  --bg-page: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --border-card: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text-heading: #091325;
+  --text-body: #475569;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+
+  /* Primary Brand Blue */
+  --primary-blue: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --primary-border: #bfdbfe;
+
+  /* Card Mockup Blue */
+  --mockup-card-bg: #0c2360;
+
+  /* Entity Category Color Palette */
+  --cat-name: #059669;
+  --cat-title: #0284c7;
+  --cat-company: #7c3aed;
+  --cat-phone: #d97706;
+  --cat-email: #e11d48;
+  --cat-website: #2563eb;
+  --cat-address: #0d9488;
+  --cat-other: #64748b;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-hero: 0 20px 40px -15px rgba(37, 99, 235, 0.15), 0 0 0 1px rgba(226, 232, 240, 0.8);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+  background-color: var(--bg-page);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Custom Smooth Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Typography Headings */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-heading);
+  letter-spacing: -0.025em;
+}
+
+/* Primary Action Button */
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  padding: 0.65rem 1.35rem;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Secondary Outlined Button */
+.btn-secondary {
+  background-color: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  border-radius: 0.625rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-card);
+  transition: all 0.15s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: #0f172a;
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Business Card Visual Container */
+.preview-card-box {
+  background: var(--mockup-card-bg);
+  border-radius: 0.875rem;
+  aspect-ratio: 1.75 / 1;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+  box-shadow: 0 8px 20px -4px rgba(12, 35, 96, 0.35);
+  transition: transform 0.2s ease;
+}
+
+/* Corner Reticle Accents for Card */
+.reticle-tl, .reticle-tr, .reticle-bl, .reticle-br {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.reticle-tl { top: 10px; left: 10px; border-top: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+.reticle-tr { top: 10px; right: 10px; border-top: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+.reticle-bl { bottom: 10px; left: 10px; border-bottom: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+.reticle-br { bottom: 10px; right: 10px; border-bottom: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+
+/* Input Fields */
+.mockup-input {
+  background-color: var(--bg-subtle);
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  font-weight: 500;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.mockup-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Bounding box styling on actual card */
+.bbox-rect, .bbox-marker {
+  position: absolute;
+  border-width: 2px;
+  border-style: solid;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.bbox-rect:hover, .bbox-rect.highlighted, .bbox-marker:hover, .bbox-marker.highlighted {
+  z-index: 50 !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.7);
+  transform: scale(1.02);
+}
+
+.cat-NAME, .cat-name { border-color: var(--cat-name); background-color: rgba(5, 150, 105, 0.22); color: var(--cat-name); }
+.cat-TITLE, .cat-title { border-color: var(--cat-title); background-color: rgba(2, 132, 199, 0.22); color: var(--cat-title); }
+.cat-COMPANY, .cat-company { border-color: var(--cat-company); background-color: rgba(124, 58, 237, 0.22); color: var(--cat-company); }
+.cat-PHONE, .cat-phone { border-color: var(--cat-phone); background-color: rgba(217, 119, 6, 0.22); color: var(--cat-phone); }
+.cat-EMAIL, .cat-email { border-color: var(--cat-email); background-color: rgba(225, 29, 72, 0.22); color: var(--cat-email); }
+.cat-WEBSITE, .cat-website { border-color: var(--cat-website); background-color: rgba(37, 99, 235, 0.22); color: var(--cat-website); }
+.cat-ADDRESS, .cat-address { border-color: var(--cat-address); background-color: rgba(13, 148, 136, 0.22); color: var(--cat-address); }
+.cat-OTHER, .cat-other { border-color: var(--cat-other); background-color: rgba(100, 116, 139, 0.18); color: var(--cat-other); }
+
+/* ==========================================================================
+   MOBILE RESPONSIVE ENHANCEMENTS (Screen width <= 640px)
+   Proper Spacing, Margins, Padding, and Touch Optimization
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  /* Prevent iOS mobile Safari auto-zoom on form focus */
+  .mockup-input {
+    font-size: 16px !important;
+    padding: 0.65rem 0.75rem;
+  }
+
+  /* Optimize Preview Card padding and height on phones */
+  .preview-card-box {
+    padding: 0.9rem;
+    min-height: 170px;
+    border-radius: 0.75rem;
+  }
+
+  /* Increase tap target sizes for thumb navigation */
+  .btn-primary, .btn-secondary {
+    min-height: 40px;
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+
+  /* Toast notification position for mobile */
+  #toast {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: calc(100vw - 32px);
+    justify-content: center;
+    font-size: 12px;
+  }
+}
+
+/* Ultra small screens (e.g. iPhone SE / 320px - 380px) */
+@media (max-width: 380px) {
+  .preview-card-box {
+    padding: 0.75rem;
+    min-height: 155px;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+    font-size: 0.75rem;
+  }
+}

@@ -1,0 +1,338 @@
+"""
+FastAPI Main Application for CardLens AI Local Business Card Extraction.
+Zero third-party APIs: 100% on-device OCR and NLP pipeline.
+"""
+import os
+import time
+import logging
+from contextlib import asynccontextmanager
+from typing import List, Optional
+
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, PlainTextResponse
+
+from app.schemas import (
+    ExtractionResponse,
+    HealthResponse,
+    ExportVCFRequest,
+    BatchExportVCFRequest,
+    ImageDimensions
+)
+from app.ocr_service import get_ocr_service
+from app.nlp_pipeline import get_nlp_classifier
+from app.vcard_utils import generate_vcard_content, generate_batch_vcard_content
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("cardlens-app")
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Pre-warm OCR and NLP models on startup for responsive initial turn."""
+    logger.info("Initializing CardLens AI application models...")
+    try:
+        import torch
+        # Configure optimal threads to avoid hyperthread contention on Windows CPU
+        torch.set_num_threads(min(4, os.cpu_count() or 4))
+        # Pre-initialize and warm up singletons
+        ocr = get_ocr_service()
+        nlp = get_nlp_classifier()
+        if nlp.ner_loaded and nlp.ner_pipeline is not None:
+            try:
+                nlp.ner_pipeline("John Doe at ACME Corp")
+            except Exception:
+                pass
+        logger.info(f"System ready! OCR: {ocr.engine_name}, NLP: {nlp.ner_model_name}, Device: {ocr.device}")
+    except Exception as e:
+        logger.warning(f"Background pre-warm notice: {e}")
+    yield
+    logger.info("CardLens AI application shutting down.")
+
+
+app = FastAPI(
+    title="CardLens AI - Local Business Card Extraction & Classification",
+    description="Enterprise-grade local OCR & NLP business card digitization without cloud APIs.",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Enable CORS for cross-origin testing and local frontend tooling
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    """Return empty 204 response for browser favicon request."""
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------------------
+# API Endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/api/health", response_model=HealthResponse, tags=["Health"])
+async def health_check():
+    """
+    Health-check endpoint verifying local OCR and NLP engine status.
+    """
+    ocr = get_ocr_service()
+    nlp = get_nlp_classifier()
+
+    return HealthResponse(
+        status="healthy" if (ocr.is_ready or ocr.reader is not None) else "degraded",
+        ocr_engine=ocr.engine_name,
+        ocr_ready=ocr.is_ready,
+        nlp_engine=nlp.ner_model_name,
+        nlp_ready=True,  # Heuristics or HF NER always available
+        torch_device=ocr.device,
+        system_ready=ocr.is_ready
+    )
+
+
+@app.post("/api/extract", response_model=ExtractionResponse, tags=["Extraction"])
+async def extract_business_card(
+    file: UploadFile = File(...),
+    back_file: Optional[UploadFile] = File(None),
+    rotation: int = Form(0),
+    back_rotation: int = Form(0)
+):
+    """
+    Accepts business card image(s) (Front required, optional Back side), executes OpenCV preprocessing,
+    local OCR text detection with multi-orientation detection, and hybrid NLP entity classification.
+    Returns structured JSON with bounding boxes, confidence scores, and contact entities merged from both sides.
+    """
+    start_time = time.time()
+
+    # Validate file presence
+    if not file or not file.filename:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No front card image uploaded. Please provide a valid business card image."
+        )
+
+    # Validate content type / extension
+    allowed_exts = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_exts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported file format '{ext}'. Allowed extensions: {', '.join(allowed_exts)}"
+        )
+
+    try:
+        # Read front image bytes
+        front_bytes = await file.read()
+        if len(front_bytes) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded front image is empty (0 bytes)."
+            )
+
+        if len(front_bytes) > 20 * 1024 * 1024:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Front file size exceeds maximum permitted limit (20MB)."
+            )
+
+        # Step 1: Optional Back side file read
+        back_tokens = []
+        back_meta = None
+        has_back_side = False
+        back_bytes = None
+
+        if back_file and back_file.filename:
+            back_ext = os.path.splitext(back_file.filename)[1].lower()
+            if back_ext in allowed_exts:
+                b_b = await back_file.read()
+                if 0 < len(b_b) <= 20 * 1024 * 1024:
+                    back_bytes = b_b
+                    has_back_side = True
+
+        # Step 2: High-Speed OCR (Parallel execution if both sides provided)
+        ocr = get_ocr_service()
+        if has_back_side and back_bytes:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                fut_front = pool.submit(ocr.extract_from_bytes, front_bytes, rotation)
+                fut_back = pool.submit(ocr.extract_from_bytes, back_bytes, back_rotation)
+                front_tokens, front_meta, _ = fut_front.result()
+                b_tokens, back_meta, _ = fut_back.result()
+            for t in front_tokens:
+                t.side = "front"
+            for idx, bt in enumerate(b_tokens):
+                bt.side = "back"
+                bt.id = f"token-back-{idx + 1}"
+            back_tokens = b_tokens
+        else:
+            front_tokens, front_meta, _ = ocr.extract_from_bytes(front_bytes, rotation=rotation)
+            for t in front_tokens:
+                t.side = "front"
+
+        all_tokens = front_tokens + back_tokens
+
+        # Step 3: Hybrid NLP Classification across combined tokens (Vision / SLM / Heuristics)
+        nlp = get_nlp_classifier()
+        image_bytes_list = []
+        if has_back_side and 'back_bytes' in locals() and back_bytes:
+            # Order by richer OCR token content first for faster vision early-exit
+            if len(back_tokens) > len(front_tokens):
+                image_bytes_list = [back_bytes, front_bytes]
+            else:
+                image_bytes_list = [front_bytes, back_bytes]
+        else:
+            image_bytes_list = [front_bytes]
+        structured_data = nlp.process_tokens(all_tokens, image_bytes_list=image_bytes_list)
+
+        elapsed_ms = round((time.time() - start_time) * 1000, 2)
+
+        return ExtractionResponse(
+            success=True,
+            data=structured_data,
+            image_dimensions=ImageDimensions(
+                width=front_meta["width"],
+                height=front_meta["height"]
+            ),
+            back_image_dimensions=ImageDimensions(
+                width=back_meta["width"],
+                height=back_meta["height"]
+            ) if back_meta else None,
+            has_back_side=has_back_side,
+            processing_time_ms=elapsed_ms,
+            ocr_engine=ocr.engine_name,
+            nlp_model=nlp.ner_model_name,
+            message="Extraction completed successfully." if all_tokens else "No text could be extracted from image(s)."
+        )
+
+    except ValueError as ve:
+        logger.error(f"Validation error: {ve}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+    except Exception as e:
+        logger.error(f"Extraction error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Extraction pipeline encountered an error: {str(e)}"
+        )
+
+
+@app.post("/api/export/vcf", tags=["Export"])
+async def export_vcard(card: ExportVCFRequest):
+    """
+    Generate downloadable standard RFC 2426 vCard 3.0 file for a single contact.
+    """
+    try:
+        vcf_content = generate_vcard_content(card)
+        contact_slug = (card.name or "contact").strip().replace(" ", "_")
+        filename = f"{contact_slug}.vcf"
+
+        return Response(
+            content=vcf_content,
+            media_type="text/vcard",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+    except Exception as e:
+        logger.error(f"vCard export error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate vCard: {str(e)}"
+        )
+
+
+@app.post("/api/export/vcf/batch", tags=["Export"])
+async def export_batch_vcards(payload: BatchExportVCFRequest):
+    """
+    Generate combined multi-contact vCard 3.0 file for all scanned cards.
+    """
+    try:
+        vcf_content = generate_batch_vcard_content(payload.cards)
+        filename = f"scanned_business_cards_{int(time.time())}.vcf"
+
+        return Response(
+            content=vcf_content,
+            media_type="text/vcard",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+    except Exception as e:
+        logger.error(f"Batch vCard export error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate batch vCard: {str(e)}"
+        )
+
+
+@app.get("/api/samples", tags=["Samples"])
+async def list_sample_cards():
+    """
+    Returns list of built-in sample business cards for quick 1-click testing.
+    """
+    if not os.path.exists(SAMPLES_DIR):
+        return []
+
+    samples = []
+    sample_files = [f for f in os.listdir(SAMPLES_DIR) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+    for sf in sample_files:
+        name_clean = os.path.splitext(sf)[0].replace("_", " ").title()
+        samples.append({
+            "id": sf,
+            "title": name_clean,
+            "url": f"/api/samples/{sf}"
+        })
+    return samples
+
+
+@app.get("/api/samples/{filename}", tags=["Samples"])
+async def get_sample_card(filename: str):
+    """Serve specific sample card image."""
+    safe_path = os.path.abspath(os.path.join(SAMPLES_DIR, filename))
+    if not safe_path.startswith(os.path.abspath(SAMPLES_DIR)) or not os.path.exists(safe_path):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sample card not found.")
+    return FileResponse(safe_path)
+
+
+# ---------------------------------------------------------------------------
+# Mount Static Files & SPA Root
+# ---------------------------------------------------------------------------
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def serve_favicon():
+    """Serve favicon to prevent 404 console errors."""
+    fav_path = os.path.join(STATIC_DIR, "favicon.svg")
+    if os.path.exists(fav_path):
+        return FileResponse(fav_path, media_type="image/svg+xml")
+    return Response(status_code=204)
+
+
+@app.get("/", tags=["Frontend"])
+async def serve_index():
+    """Serve the Single-Page Application HTML."""
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return PlainTextResponse("CardLens AI Frontend is building... Please check back in a moment.")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="127.0.0.1", port=8000, reload=True)

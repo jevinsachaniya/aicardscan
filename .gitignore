@@ -1,0 +1,4 @@
+models/custom_model/*.safetensors
+__pycache__/
+*.pyc
+.env

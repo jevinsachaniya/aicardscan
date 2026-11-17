@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>CardScan Pro | Minimal On-Device Business Card Scanner</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  
+  <!-- Tailwind CSS Framework -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          screens: {
+            'xs': '420px',
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- SheetJS for Genuine Client-Side .xlsx Excel Downloads -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <!-- Custom Modern SaaS Stylesheet -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-[#f8fafc] text-[#334155] min-h-screen flex flex-col antialiased overflow-x-hidden w-full">
+
+  <!-- Top Minimal Sticky Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e2e8f0] px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3.5">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-2">
+      
+      <!-- Logo -->
+      <a href="#" class="flex items-center space-x-2 shrink-0">
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#2563eb] flex items-center justify-center text-white shadow-sm shadow-blue-500/20">
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="5" width="18" height="14" rx="3" stroke-width="2"/>
+            <circle cx="8" cy="11" r="2" stroke-width="2"/>
+            <path d="M13 9h5M13 13h3" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="flex items-baseline space-x-1">
+          <span class="text-base sm:text-lg font-bold tracking-tight text-[#091325]">CardScan</span>
+          <span class="text-[10px] sm:text-xs font-semibold text-[#2563eb] uppercase tracking-wider">Pro</span>
+        </div>
+      </a>
+
+      <!-- Status Indicator & Quick Links -->
+      <div class="flex items-center space-x-2 sm:space-x-4 shrink-0">
+        <div class="flex items-center space-x-1.5 text-[11px] sm:text-xs font-semibold px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
+          </span>
+          <span id="health-status-text" class="truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">Vision AI Ready</span>
+        </div>
+
+        <a href="#batch-vault-section" class="inline-flex items-center space-x-1 text-xs font-semibold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+          <span class="hidden xs:inline">Vault</span>
+          <span>(<span id="nav-batch-count">0</span>)</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN 3-PART MINIMAL WORKSPACE -->
+  <main class="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-10 py-4 sm:py-8 w-full space-y-6 sm:space-y-8">
+
+    <!-- ================================================================= -->
+    <!-- TOP SECTION: [ PART 1: THAT TEXT ]  &  [ PART 2: UPLOAD SECTION ] -->
+    <!-- ================================================================= -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+
+      <!-- ------------------------------------------------------------- -->
+      <!-- PART 1: THAT TEXT (Left Column - Clean, Minimal & Well-Spaced) -->
+      <!-- ------------------------------------------------------------- -->
+      <div class="lg:col-span-5 space-y-4 sm:space-y-5 pt-1 sm:pt-2">
+        
+        <!-- Minimal Badge -->
+        <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+          <span>AI-Powered Business Card Scanner</span>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#091325] tracking-tight leading-snug">
+          Turn every business card into a contact, instantly.
+        </h1>
+
+        <!-- Subtitle -->
+        <p class="text-xs sm:text-sm lg:text-base text-[#475569] leading-relaxed">
+          Upload front & back photos or snap live with your camera. Local Vision AI accurately reads names, multiple phone numbers, emails, addresses, and notes with zero cloud dependence.
+        </p>
+
+        <!-- Feature Pills -->
+        <div class="space-y-2 pt-1 text-xs text-slate-600 font-medium">
+          <div class="flex items-start space-x-2">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span><strong>100% On-Device Neural Vision:</strong> Zero third-party cloud APIs.</span>
+          </div>
+          <div class="flex items-start space-x-2">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span><strong>Dual-Side Fusion:</strong> Merges contacts from front with back address & factory into 1 entry.</span>
+          </div>
+          <div class="flex items-start space-x-2">
+            <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span><strong>Multi-Field Capture:</strong> Reads all mobile, office phones, emails, and full address.</span>
+          </div>
+        </div>
+
+        <!-- 1-Click Built-In Test Samples -->
+        <div class="pt-3 sm:pt-4 border-t border-slate-200">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">1-Click Test Samples:</div>
+          <div class="flex flex-wrap gap-1.5 sm:gap-2">
+            <button onclick="loadDualFoodoraSample()" class="text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center space-x-1.5 shadow-xs">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>Foodora (Front + Back)</span>
+            </button>
+            <button onclick="loadSample('tech_executive.png')" class="text-xs font-medium px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-xs">
+              <span>Apex AI (Elena)</span>
+            </button>
+            <button onclick="loadSample('aji_setiawan.png')" class="text-xs font-medium px-2.5 sm:px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 transition shadow-xs">
+              <span>ABC President (Aji)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ------------------------------------------------------------- -->
+      <!-- PART 2: UPLOAD CARD SECTION (Right Column - Clean & Aligned)  -->
+      <!-- ------------------------------------------------------------- -->
+      <div id="scanner-dock-anchor" class="lg:col-span-7 w-full">
+        
+        <!-- Hidden file inputs -->
+        <input type="file" id="front-file-input" class="hidden" accept="image/png,image/jpeg,image/jpg,image/webp">
+        <input type="file" id="back-file-input" class="hidden" accept="image/png,image/jpeg,image/jpg,image/webp">
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 lg:p-6 space-y-3.5 sm:space-y-4">
+          
+          <!-- DUAL UPLOAD SLOTS GRID (Front Side & Back Side) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            
+            <!-- FRONT SIDE SLOT -->
+            <div class="border border-slate-200 rounded-xl p-3 sm:p-3.5 bg-slate-50/70 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <span id="front-indicator-dot" class="w-2 h-2 rounded-full bg-blue-600"></span>
+                  <span>Front Photo (Side A)</span>
+                </span>
+                <span id="front-status-pill" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                  Required
+                </span>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="triggerUploadModal('front')" class="py-2.5 px-2 text-xs font-semibold rounded-lg bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition flex items-center justify-center space-x-1.5 shadow-xs" title="Upload Front Photo">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  <span>Upload</span>
+                </button>
+
+                <button type="button" onclick="openWebcam('front')" class="py-2.5 px-2 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition flex items-center justify-center space-x-1.5 shadow-xs" title="Click Front Photo using Camera">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                  <span>Camera</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- BACK SIDE SLOT -->
+            <div class="border border-slate-200 rounded-xl p-3 sm:p-3.5 bg-slate-50/70 space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <span id="back-indicator-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
+                  <span>Back Photo (Side B)</span>
+                </span>
+                <span id="back-status-pill" class="text-[10px] font-semibold text-slate-500">
+                  Optional
+                </span>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="triggerUploadModal('back')" class="py-2.5 px-2 text-xs font-semibold rounded-lg bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition flex items-center justify-center space-x-1.5 shadow-xs" title="Upload Back Photo">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                  <span>Upload</span>
+                </button>
+
+                <button type="button" onclick="openWebcam('back')" class="py-2.5 px-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition flex items-center justify-center space-x-1.5 shadow-xs" title="Click Back Photo using Camera">
+                  <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+                  <span>Camera</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Side Switcher & Rotation Bar (visible when card is attached) -->
+          <div id="side-switcher-bar" class="hidden flex flex-wrap items-center justify-between gap-2 p-1.5 rounded-xl bg-slate-100 border border-slate-200">
+            <div class="flex items-center space-x-1">
+              <button id="view-front-tab-btn" class="py-1 px-2.5 text-xs font-bold rounded-lg bg-white text-[#2563eb] shadow-xs transition">
+                Viewing Front
+              </button>
+              <button id="view-back-tab-btn" class="py-1 px-2.5 text-xs font-medium rounded-lg text-slate-600 hover:text-slate-900 transition">
+                Viewing Back
+              </button>
+            </div>
+            <div class="flex items-center space-x-1.5 pr-1">
+              <button id="rotate-left-btn" type="button" class="text-xs px-2 py-1 rounded bg-white text-slate-600 border border-slate-200 hover:text-slate-900 shadow-xs" title="Rotate 90° Left">↺</button>
+              <button id="rotate-right-btn" type="button" class="text-xs px-2 py-1 rounded bg-white text-slate-600 border border-slate-200 hover:text-slate-900 shadow-xs" title="Rotate 90° Right">↻</button>
+              <label class="relative inline-flex items-center cursor-pointer ml-1" title="Toggle Bounding Boxes">
+                <input type="checkbox" id="toggle-bboxes" checked class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                <span class="ml-1 text-[11px] font-medium text-slate-500">Boxes</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Card Visual Preview / OCR Viewport -->
+          <div id="card-preview-viewport" class="preview-card-box relative group min-h-[160px] sm:min-h-[190px]">
+            <!-- Reticles -->
+            <div class="reticle-tl"></div>
+            <div class="reticle-tr"></div>
+            <div class="reticle-bl"></div>
+            <div class="reticle-br"></div>
+
+            <!-- Placeholder Mockup State -->
+            <div id="card-mockup-placeholder" class="h-full flex flex-col justify-between select-none py-1 sm:py-2">
+              <div class="flex items-center justify-between">
+                <div class="text-sm sm:text-base font-bold tracking-tight text-white flex items-center space-x-1.5">
+                  <span>Northwind Studio</span>
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                </div>
+                <span class="text-[10px] font-semibold text-cyan-300/80 bg-white/10 px-2 py-0.5 rounded">Sample Card</span>
+              </div>
+              <div class="space-y-0.5 sm:space-y-1">
+                <div class="text-base sm:text-lg font-extrabold text-white">Alex Morgan</div>
+                <div class="text-xs text-sky-200">Head of Partnerships</div>
+                <div class="text-[10px] sm:text-[11px] text-sky-300/80 font-mono">alex@northwind.example · +1 555 0142</div>
+              </div>
+            </div>
+
+            <!-- Uploaded Card Real Image & Bounding Box Viewport -->
+            <img id="card-preview-img" src="" alt="Card Ingestion View" class="hidden absolute inset-0 w-full h-full object-contain bg-slate-950">
+            <div id="bbox-overlay-container" class="absolute inset-0 pointer-events-none"></div>
+          </div>
+
+          <!-- Prominent Scan CTA Button -->
+          <div id="scan-trigger-container">
+            <button id="start-scan-btn" type="button" class="btn-primary w-full py-3 sm:py-3.5 text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              <span id="scan-btn-label">Scan Card with Vision AI</span>
+            </button>
+          </div>
+
+          <!-- Loading Spinner HUD (When Scanning) -->
+          <div id="loading-section" class="hidden p-4 sm:p-5 rounded-xl bg-blue-50/70 border border-blue-200 text-center space-y-2.5">
+            <div class="w-7 h-7 mx-auto rounded-full border-2 border-blue-200 border-t-blue-600 animate-spin"></div>
+            <div>
+              <p id="loading-status-title" class="text-xs font-bold text-slate-900">Perceiving Visual Card...</p>
+              <p id="loading-status-desc" class="text-[11px] text-slate-500">Running on-device neural vision perception (MiniCPM-V)</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- [ PART 3: OUTPUT FIELD SECTION ] (Full-Width Bottom Container)    -->
+    <!-- ================================================================= -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+      
+      <!-- Output Header & Quick Action Buttons -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-200 pb-4 sm:pb-5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h2 class="text-lg sm:text-xl font-bold text-[#091325] flex items-center space-x-2">
+              <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              <span>Extracted Card Details</span>
+            </h2>
+            <span id="engine-badge" class="px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              Vision Model Active
+            </span>
+            <span id="timing-badge" class="font-mono text-xs text-slate-500">0.0 ms</span>
+          </div>
+          <p id="review-status-label" class="text-xs text-slate-500 mt-1">
+            All detected contact numbers, emails, addresses, and details are displayed and fully editable below.
+          </p>
+        </div>
+
+        <!-- Export & Save Actions Toolbar -->
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1 sm:pt-0">
+          <button id="add-to-table-btn" type="button" class="btn-primary text-xs !py-2 sm:!py-2.5 !px-3 sm:!px-3.5 shadow-xs">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>Save to Batch Vault</span>
+          </button>
+
+          <button id="export-vcf-btn" type="button" class="btn-secondary text-xs !py-2 sm:!py-2.5 !px-2.5 sm:!px-3" title="Download vCard file for mobile contacts">
+            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>vCard (.vcf)</span>
+          </button>
+
+          <button onclick="exportCurrentCardToExcel()" type="button" class="btn-secondary text-xs !py-2 sm:!py-2.5 !px-2.5 sm:!px-3 !text-emerald-700 hover:!bg-emerald-50" title="Export this card directly to Excel">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Excel (.xlsx)</span>
+          </button>
+
+          <button onclick="copyCurrentCardJSON()" type="button" class="btn-secondary text-xs !py-2 sm:!py-2.5 !px-2 sm:!px-2.5" title="Copy raw JSON data to clipboard">
+            <span>JSON</span>
+          </button>
+
+          <button onclick="resetMockupView()" type="button" class="btn-secondary text-xs !py-2 sm:!py-2.5 !px-2 sm:!px-2.5 !text-slate-500 hover:!text-slate-900" title="Clear inputs and start fresh">
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- COMPREHENSIVE FIELD GRID (Minimal, Clean Alignment & Spacing) -->
+      <div class="space-y-4 sm:space-y-5">
+        
+        <!-- ROW 1: Identity (Full Name, Job Title, Company) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Full Name</span>
+              <span class="text-[10px] font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">Name</span>
+            </label>
+            <input type="text" id="field-name" class="mockup-input font-bold text-slate-900" value="Alex Morgan" placeholder="e.g. Onkar Jadhav">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Job Title / Designation</span>
+              <span class="text-[10px] font-medium text-sky-600 bg-sky-50 px-1.5 py-0.2 rounded">Title</span>
+            </label>
+            <input type="text" id="field-title" class="mockup-input text-slate-800" value="Head of Partnerships" placeholder="e.g. Director / Manager">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Company / Organization</span>
+              <span class="text-[10px] font-medium text-purple-600 bg-purple-50 px-1.5 py-0.2 rounded">Company</span>
+            </label>
+            <input type="text" id="field-company" class="mockup-input font-semibold text-slate-900" value="Northwind Studio" placeholder="e.g. Foodora IMPEX">
+          </div>
+        </div>
+
+        <!-- ROW 2: Phone Numbers (Mobile, Office Phone, All Numbers Chips) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center space-x-1">
+              <span>Mobile Number</span>
+              <span class="text-[10px] text-slate-400 font-normal">(Primary)</span>
+            </label>
+            <input type="text" id="field-phone-primary" class="mockup-input font-mono text-slate-800" value="+1 555 0142" placeholder="+91 88793 47040">
+            <input type="hidden" id="field-mobile" value="+1 555 0142">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center space-x-1">
+              <span>Office Phone / Landline</span>
+              <span class="text-[10px] text-slate-400 font-normal">(Tel / Secondary)</span>
+            </label>
+            <input type="text" id="field-office-phone" class="mockup-input font-mono text-slate-800" value="" placeholder="e.g. +91 22 2788 1234">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>All Detected Phone Numbers</span>
+              <span class="text-[10px] text-slate-400 font-normal">Tap to copy</span>
+            </label>
+            <div id="all-phones-chips" class="min-h-[42px] p-1.5 rounded-lg border border-slate-200 bg-slate-50 flex flex-wrap items-center gap-1.5">
+              <span class="text-xs text-slate-400 italic px-1">Detected numbers will appear here</span>
+            </div>
+            <!-- Dynamic hidden list for backward compatibility -->
+            <div id="phone-list-container" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Digital Channels (Email Addresses & Website) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Email Address(es)</span>
+              <span class="text-[10px] text-slate-400 font-normal">All emails found</span>
+            </label>
+            <input type="email" id="field-email-primary" class="mockup-input text-slate-800" value="alex@northwind.example" placeholder="onkar.jadhav@foodora.com">
+            <div id="all-emails-chips" class="flex flex-wrap gap-1.5 pt-1"></div>
+            <!-- Dynamic hidden list -->
+            <div id="email-list-container" class="hidden"></div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Website / Domain URL</span>
+              <span class="text-[10px] text-slate-400 font-normal">Tap to visit</span>
+            </label>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="field-website" class="mockup-input text-slate-800 flex-1" value="" placeholder="www.foodora.com">
+              <button type="button" onclick="testWebsiteUrl()" class="py-2.5 px-3 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition shrink-0" title="Open website in new tab">
+                Visit ↗
+              </button>
+            </div>
+            <div id="all-websites-chips" class="flex flex-wrap gap-1.5 pt-1"></div>
+            <!-- Dynamic hidden list -->
+            <div id="website-list-container" class="hidden"></div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Physical Addresses (Office / Registered & Factory / Plant) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Office Address / Registered Location</span>
+              <span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">Office</span>
+            </label>
+            <textarea id="field-office-address" rows="3" class="mockup-input text-slate-800 text-xs leading-relaxed" placeholder="e.g. Bldg No 53, Vidya Darshan CHS, Tagore Nagar, Vikhroli East, Mumbai - 400083"></textarea>
+            <!-- Backward compatibility input -->
+            <input type="hidden" id="field-address" value="">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-700 flex items-center justify-between">
+              <span>Factory / Plant / Secondary Address</span>
+              <span class="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded">Side B / Factory</span>
+            </label>
+            <textarea id="field-factory-address" rows="3" class="mockup-input text-slate-800 text-xs leading-relaxed" placeholder="e.g. Plot No. 45, MIDC Industrial Area, Taloja, Panvel (if present on card)"></textarea>
+          </div>
+        </div>
+
+        <!-- ROW 5: Full Raw OCR Detected Text & Notes -->
+        <div class="grid grid-cols-1 gap-3 sm:gap-4 pt-1">
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+                <span>Full Detected Text Across Both Sides (Raw OCR & Spatial Tokens)</span>
+              </label>
+              <button type="button" onclick="toggleTokensModal()" class="text-xs text-blue-600 hover:underline font-semibold">
+                View Tokens Table →
+              </button>
+            </div>
+            <textarea id="field-raw-text" rows="3" class="mockup-input text-slate-600 text-xs font-mono leading-relaxed bg-slate-50" readonly placeholder="All detected lines of text from front & back will be listed here..."></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ------------------------------------------------------------- -->
+      <!-- BATCH CONTACTS VAULT SPREADSHEET TABLE                        -->
+      <!-- ------------------------------------------------------------- -->
+      <div id="batch-vault-section" class="pt-5 sm:pt-6 border-t border-slate-200 space-y-3.5 sm:space-y-4">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div>
+            <div class="flex items-center space-x-2.5 sm:space-x-3">
+              <h3 class="text-base sm:text-lg font-bold text-[#091325]">Batch Contacts Vault</h3>
+              <span id="batch-count-badge" class="px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                0 Contacts
+              </span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">All cards you save are collected in this table and can be exported to Excel, CSV, or vCard.</p>
+          </div>
+
+          <!-- Bulk Export Toolbar -->
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button id="batch-export-csv-btn" class="btn-secondary text-xs !py-1.5 !px-2.5 sm:!px-3 !text-emerald-700 hover:!bg-emerald-50 disabled:opacity-40" disabled>
+              <span>Export Excel / CSV</span>
+            </button>
+            <button id="batch-export-vcf-btn" class="btn-primary text-xs !py-1.5 !px-2.5 sm:!px-3 disabled:opacity-40" disabled>
+              <span>Export vCards</span>
+            </button>
+            <button id="batch-export-json-btn" class="btn-secondary text-xs !py-1.5 !px-2 sm:!px-2.5 disabled:opacity-40" disabled>
+              <span>JSON</span>
+            </button>
+            <button id="batch-clear-btn" class="btn-secondary text-xs !py-1.5 !px-2 sm:!px-2.5 !text-rose-600 hover:!bg-rose-50 disabled:opacity-40" disabled>
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search Table Filter -->
+        <div class="relative w-full sm:max-w-md">
+          <input type="text" id="vault-search-input" oninput="filterBatchTable(this.value)" class="mockup-input text-xs py-2" placeholder="Search saved contacts by name, company, email, phone, or address...">
+        </div>
+
+        <!-- Mobile Scroll Hint -->
+        <div class="text-[11px] text-slate-400 sm:hidden flex items-center space-x-1">
+          <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+          <span>Swipe table left & right to view all columns</span>
+        </div>
+
+        <!-- Spreadsheet Table Container (Edge-to-edge on mobile for smooth thumb swipe) -->
+        <div class="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 rounded-xl border border-slate-200">
+          <table class="w-full text-left text-xs whitespace-nowrap sm:whitespace-normal">
+            <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="p-2.5 sm:p-3 w-8 sm:w-10 text-center">#</th>
+                <th class="p-2.5 sm:p-3 min-w-[130px] sm:min-w-[150px]">Contact Name</th>
+                <th class="p-2.5 sm:p-3 min-w-[120px] sm:min-w-[140px]">Job Title</th>
+                <th class="p-2.5 sm:p-3 min-w-[140px] sm:min-w-[160px]">Company</th>
+                <th class="p-2.5 sm:p-3 min-w-[120px] sm:min-w-[140px]">Mobile</th>
+                <th class="p-2.5 sm:p-3 min-w-[120px] sm:min-w-[140px]">Office Phone</th>
+                <th class="p-2.5 sm:p-3 min-w-[150px] sm:min-w-[170px]">Email Address</th>
+                <th class="p-2.5 sm:p-3 min-w-[130px] sm:min-w-[150px]">Website</th>
+                <th class="p-2.5 sm:p-3 min-w-[170px] sm:min-w-[200px]">Office Address</th>
+                <th class="p-2.5 sm:p-3 min-w-[150px] sm:min-w-[180px]">Factory Address</th>
+                <th class="p-2.5 sm:p-3 w-16 sm:w-20 text-center sticky right-0 bg-slate-100">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="batch-table-body" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="batch-empty-view" class="py-6 sm:py-8 text-center space-y-1.5">
+          <p class="text-sm font-semibold text-slate-700">No contacts saved in batch vault yet.</p>
+          <p class="text-xs text-slate-400">Scan cards above and click "Save to Batch Vault" to build your spreadsheet.</p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Clean Minimal Footer -->
+  <footer class="border-t border-slate-200 bg-white py-5 sm:py-6 px-4 sm:px-6 lg:px-12 text-center text-xs text-slate-500 mt-8 sm:mt-12">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3">
+      <div class="flex items-center space-x-2">
+        <span class="font-bold text-slate-900">CardScan Pro</span>
+        <span>— 100% Private On-Device Neural Vision Model (minicpm-v:latest)</span>
+      </div>
+      <div class="text-slate-400 text-[11px] sm:text-xs">
+        Zero Cloud APIs · Local PyTorch OCR + LayoutLM & Ollama Vision
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================================================================= -->
+  <!-- MODALS & OVERLAYS                                                 -->
+  <!-- ================================================================= -->
+
+  <!-- WEBCAM CAMERA VIEWFINDER MODAL -->
+  <div id="webcam-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto shadow-2xl border border-slate-200 space-y-3.5 p-4 sm:p-5">
+      
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <h3 id="webcam-modal-title" class="text-xs sm:text-sm font-bold text-slate-900">Live Camera: Click Front Photo</h3>
+        </div>
+        <button id="close-webcam-btn" type="button" class="text-slate-400 hover:text-slate-700 text-lg leading-none p-1">✕</button>
+      </div>
+
+      <!-- Viewfinder Video with Business Card Guide Aspect Box -->
+      <div class="relative w-full aspect-[4/3] sm:aspect-[1.6/1] bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-800">
+        <video id="webcam-video" autoplay playsinline class="w-full h-full object-cover"></video>
+        
+        <!-- Framing Guide Reticle Overlay -->
+        <div class="absolute inset-3 sm:inset-4 rounded-lg border-2 border-dashed border-cyan-400/80 pointer-events-none flex flex-col justify-between p-2">
+          <div class="text-[9px] sm:text-[10px] font-mono text-cyan-300 bg-slate-900/60 self-start px-1.5 py-0.5 rounded">Align Business Card Inside Box</div>
+          <div class="text-[9px] sm:text-[10px] font-mono text-cyan-300/80 bg-slate-900/60 self-end px-1.5 py-0.5 rounded">High Clarity Guide</div>
+        </div>
+      </div>
+
+      <!-- Capture Canvas (hidden from view) -->
+      <canvas id="webcam-canvas" class="hidden"></canvas>
+
+      <!-- Modal Actions -->
+      <div class="flex items-center justify-end space-x-2 pt-1 sm:pt-2">
+        <button id="cancel-webcam-btn" type="button" class="btn-secondary text-xs !py-2.5 !px-3.5 sm:!px-4">
+          Cancel
+        </button>
+        <button id="capture-webcam-btn" type="button" class="btn-primary text-xs !py-2.5 !px-4 sm:!px-5 flex items-center space-x-1.5 shadow-md shadow-blue-500/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+          <span>📸 Click Image Now</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- OCR TOKENS MODAL (Spatial Debugger View) -->
+  <div id="tokens-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200">
+      <div class="p-3.5 sm:p-4 border-b border-slate-200 flex items-center justify-between">
+        <div>
+          <h3 class="text-xs sm:text-sm font-bold text-slate-900">Detected OCR Tokens & Spatial Coordinates</h3>
+          <p class="text-[11px] sm:text-xs text-slate-500">All text tokens classified by LayoutLM & Vision with bounding boxes.</p>
+        </div>
+        <button id="close-tokens-btn" type="button" class="text-slate-400 hover:text-slate-700 text-lg leading-none p-1">✕</button>
+      </div>
+      <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap sm:whitespace-normal">
+            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-2">#</th>
+                <th class="p-2">Text</th>
+                <th class="p-2">Category</th>
+                <th class="p-2">Confidence</th>
+                <th class="p-2">Side</th>
+              </tr>
+            </thead>
+            <tbody id="tokens-table-body" class="divide-y divide-slate-100 font-mono text-[11px]">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION HUD -->
+  <div id="toast" class="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl flex items-center justify-center sm:justify-start space-x-2 border border-slate-800">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+      <span id="toast-message">Notification</span>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE APP LOGIC -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -183,6 +183,53 @@ function setupEventListeners() {
   elements.cancelWebcamBtn.addEventListener('click', closeWebcam);
   elements.captureWebcamBtn.addEventListener('click', captureWebcamPhoto);
 
+  // Optional Gemini AI Key Modal controls
+  const apiKeyModal = document.getElementById('api-key-modal');
+  const btnApiKeyModal = document.getElementById('btn-api-key-modal');
+  const closeApiKeyModal = document.getElementById('close-api-key-modal');
+  const inputGeminiApiKey = document.getElementById('input-gemini-api-key');
+  const btnSaveApiKey = document.getElementById('btn-save-api-key');
+  const btnClearApiKey = document.getElementById('btn-clear-api-key');
+
+  if (btnApiKeyModal && apiKeyModal) {
+    btnApiKeyModal.addEventListener('click', () => {
+      const existing = localStorage.getItem('gemini_api_key') || '';
+      if (inputGeminiApiKey) inputGeminiApiKey.value = existing;
+      apiKeyModal.classList.remove('hidden');
+    });
+
+    if (closeApiKeyModal) {
+      closeApiKeyModal.addEventListener('click', () => apiKeyModal.classList.add('hidden'));
+    }
+
+    apiKeyModal.addEventListener('click', (e) => {
+      if (e.target === apiKeyModal) apiKeyModal.classList.add('hidden');
+    });
+
+    if (btnSaveApiKey && inputGeminiApiKey) {
+      btnSaveApiKey.addEventListener('click', () => {
+        const val = inputGeminiApiKey.value.trim();
+        if (val) {
+          localStorage.setItem('gemini_api_key', val);
+          showToast('Gemini AI Key saved! 99% accuracy enabled.');
+        } else {
+          localStorage.removeItem('gemini_api_key');
+          showToast('API Key cleared. Using Local Engine.');
+        }
+        apiKeyModal.classList.add('hidden');
+      });
+    }
+
+    if (btnClearApiKey && inputGeminiApiKey) {
+      btnClearApiKey.addEventListener('click', () => {
+        localStorage.removeItem('gemini_api_key');
+        inputGeminiApiKey.value = '';
+        showToast('API Key cleared. Using Local Engine.');
+        apiKeyModal.classList.add('hidden');
+      });
+    }
+  }
+
   // Tokens Modal
   if (elements.closeTokensBtn) {
     elements.closeTokensBtn.addEventListener('click', () => elements.tokensModal.classList.add('hidden'));
@@ -430,6 +477,11 @@ async function triggerExtraction() {
     if (AppState.backFileBlob) {
       formData.append('back_file', AppState.backFileBlob);
       formData.append('back_rotation', AppState.backRotation);
+    }
+
+    const savedApiKey = localStorage.getItem('gemini_api_key');
+    if (savedApiKey && savedApiKey.trim()) {
+      formData.append('api_key', savedApiKey.trim());
     }
 
     const response = await fetch('/api/extract', {

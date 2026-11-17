@@ -118,7 +118,7 @@ class HybridNLPClassifier:
     Integrates Rule-based Regular Expressions, Transformer NER, and Domain Knowledge Heuristics.
     """
 
-    def __init__(self, use_hf_ner: bool = True, use_ollama: bool = False, use_vision: bool = False):
+    def __init__(self, use_hf_ner: bool = False, use_ollama: bool = False, use_vision: bool = False):
         self.use_hf_ner = use_hf_ner
         self.use_ollama = use_ollama
         self.use_vision = use_vision
@@ -129,7 +129,7 @@ class HybridNLPClassifier:
         self.layoutlm_loaded = False
         self.ollama_model = None
         self.vision_model = None
-        self.ner_model_name = "High-Speed On-Device Neural Engine (BERT-NER + Spatial Layout)"
+        self.ner_model_name = "High-Speed Spatial & Heuristic Engine (Render 512MB Optimized)"
 
         # Check for local Ollama Vision Model or SLM only if explicitly requested
         if self.use_vision:
@@ -149,7 +149,7 @@ class HybridNLPClassifier:
         elif self.ner_loaded:
             self.ner_model_name = "High-Speed On-Device Neural Engine (BERT-NER + Spatial Layout)"
         else:
-            self.ner_model_name = "Domain Knowledge & Heuristics (Local)"
+            self.ner_model_name = "High-Speed Spatial & Heuristic Engine (Render 512MB Optimized)"
 
     def _check_vision_model_available(self) -> Optional[str]:
         """Detect if local Ollama daemon has a vision language model installed."""
@@ -1130,5 +1130,5 @@ _nlp_classifier_instance: Optional[HybridNLPClassifier] = None
 def get_nlp_classifier() -> HybridNLPClassifier:
     global _nlp_classifier_instance
     if _nlp_classifier_instance is None:
-        _nlp_classifier_instance = HybridNLPClassifier(use_hf_ner=True)
+        _nlp_classifier_instance = HybridNLPClassifier(use_hf_ner=False)
     return _nlp_classifier_instance

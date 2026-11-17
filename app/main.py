@@ -38,20 +38,15 @@ SAMPLES_DIR = os.path.join(BASE_DIR, "samples")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Pre-warm OCR and NLP models on startup for responsive initial turn."""
+    """Pre-warm OCR and NLP models on startup for responsive initial turn (Render 512MB optimized)."""
     logger.info("Initializing CardLens AI application models...")
     try:
         import torch
-        # Configure optimal threads to avoid hyperthread contention on Windows CPU
-        torch.set_num_threads(min(4, os.cpu_count() or 4))
+        # Set 1 thread to avoid memory spikes under 512MB limit
+        torch.set_num_threads(1)
         # Pre-initialize and warm up singletons
         ocr = get_ocr_service()
         nlp = get_nlp_classifier()
-        if nlp.ner_loaded and nlp.ner_pipeline is not None:
-            try:
-                nlp.ner_pipeline("John Doe at ACME Corp")
-            except Exception:
-                pass
         logger.info(f"System ready! OCR: {ocr.engine_name}, NLP: {nlp.ner_model_name}, Device: {ocr.device}")
     except Exception as e:
         logger.warning(f"Background pre-warm notice: {e}")
@@ -164,25 +159,20 @@ async def extract_business_card(
                     back_bytes = b_b
                     has_back_side = True
 
-        # Step 2: High-Speed OCR (Parallel execution if both sides provided)
+        # Step 2: High-Speed OCR (Low-RAM execution for Render 512MB limit)
         ocr = get_ocr_service()
+        front_tokens, front_meta, _ = ocr.extract_from_bytes(front_bytes, rotation=rotation)
+        for t in front_tokens:
+            t.side = "front"
+
+        back_tokens = []
+        back_meta = None
         if has_back_side and back_bytes:
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                fut_front = pool.submit(ocr.extract_from_bytes, front_bytes, rotation)
-                fut_back = pool.submit(ocr.extract_from_bytes, back_bytes, back_rotation)
-                front_tokens, front_meta, _ = fut_front.result()
-                b_tokens, back_meta, _ = fut_back.result()
-            for t in front_tokens:
-                t.side = "front"
+            b_tokens, back_meta, _ = ocr.extract_from_bytes(back_bytes, rotation=back_rotation)
             for idx, bt in enumerate(b_tokens):
                 bt.side = "back"
                 bt.id = f"token-back-{idx + 1}"
             back_tokens = b_tokens
-        else:
-            front_tokens, front_meta, _ = ocr.extract_from_bytes(front_bytes, rotation=rotation)
-            for t in front_tokens:
-                t.side = "front"
 
         all_tokens = front_tokens + back_tokens
 

@@ -49,8 +49,8 @@ class LocalOCRService:
         try:
             import easyocr
             import os
-            # Set optimal thread count to prevent CPU thrashing
-            torch.set_num_threads(min(4, os.cpu_count() or 4))
+            # Set 1 thread to minimize RAM consumption under Render 512MB limit
+            torch.set_num_threads(1)
             gpu_flag = (self.device == "cuda")
             logger.info(f"Initializing EasyOCR reader on device: {self.device} (GPU={gpu_flag})...")
             self.reader = easyocr.Reader(['en'], gpu=gpu_flag, verbose=False)
@@ -68,14 +68,14 @@ class LocalOCRService:
 
     def _run_easyocr_on_image(self, img_rgb: np.ndarray, width: int, height: int) -> List[OCRToken]:
         """Execute ultra-fast EasyOCR text detection and recognition optimized for 2-4 second response times."""
-        # Optimal 720px canvas for 4x faster CPU inference while preserving crisp text resolution
-        optimal_canvas = min(720, max(width, height))
+        # Optimal 680px canvas and batch_size 2 for low RAM environments (Render 512MB)
+        optimal_canvas = min(680, max(width, height))
         raw_results = self.reader.readtext(
             img_rgb,
             paragraph=False,
             canvas_size=optimal_canvas,
             mag_ratio=1.0,
-            batch_size=4,
+            batch_size=2,
             width_ths=0.7,
             contrast_ths=0.05,     # Detect low-contrast and light stylish text
             adjust_contrast=0.5,   # Boost contrast on stylized cards

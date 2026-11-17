@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ImagePreprocessor:
     """Preprocesses business card images for high-accuracy local OCR."""
 
-    def __init__(self, min_dimension: int = 800, max_dimension: int = 2200):
+    def __init__(self, min_dimension: int = 600, max_dimension: int = 1000):
         self.min_dimension = min_dimension
         self.max_dimension = max_dimension
         self.qr_detector = cv2.QRCodeDetector()
@@ -47,11 +47,22 @@ class ImagePreprocessor:
         return masked_img, qr_contents
 
     def load_image_from_bytes(self, image_bytes: bytes) -> np.ndarray:
-        """Decode raw image bytes into an OpenCV BGR numpy array."""
+        """Decode raw image bytes into an OpenCV BGR numpy array with immediate downscaling for mobile camera photos."""
         np_arr = np.frombuffer(image_bytes, np.uint8)
         img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
         if img is None:
             raise ValueError("Failed to decode image. File may be corrupted or in an unsupported format.")
+
+        # Immediate memory guard: Downscale massive mobile camera photos (e.g. 12-48MP)
+        # to max_dimension right at ingestion so downstream operations consume negligible RAM (<3MB).
+        h, w = img.shape[:2]
+        max_dim = max(h, w)
+        if max_dim > self.max_dimension:
+            scale = self.max_dimension / float(max_dim)
+            new_w = max(1, int(w * scale))
+            new_h = max(1, int(h * scale))
+            img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+
         return img
 
     def apply_rotation(self, img: np.ndarray, rotation: int) -> np.ndarray:
@@ -168,8 +179,8 @@ class ImagePreprocessor:
         clahe = cv2.createCLAHE(clipLimit=1.6, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
 
-        # Bilateral filter reduces noise while preserving stroke boundaries
-        denoised = cv2.bilateralFilter(enhanced, d=5, sigmaColor=25, sigmaSpace=25)
+        # Bilateral filter with d=3 is fast and low-RAM while preserving stroke boundaries
+        denoised = cv2.bilateralFilter(enhanced, d=3, sigmaColor=25, sigmaSpace=25)
 
         # Crisp unsharp mask for clean font edges
         gaussian = cv2.GaussianBlur(denoised, (0, 0), 1.5)
@@ -189,9 +200,11 @@ class ImagePreprocessor:
 
         # Detect and decode any QR code, and mask it so OCR does not read matrix noise as text
         masked_bgr, qr_contents = self.detect_and_mask_qr_codes(raw_bgr)
+        del raw_bgr
 
         # Optimal scaling for OCR character clarity
         img, scale = self.scale_image_for_ocr(masked_bgr)
+        del masked_bgr
 
         # Grayscale
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -211,7 +224,6 @@ class ImagePreprocessor:
         h, w = img.shape[:2]
 
         return {
-            "original_bgr": raw_bgr,
             "preprocessed_rgb": rgb_enhanced,
             "gray": enhanced_gray,
             "deskew_angle": round(angle, 2),

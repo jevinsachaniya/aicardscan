@@ -63,23 +63,24 @@ class LocalOCRService:
             self.is_ready = False
 
     def _run_easyocr_on_image(self, img_rgb: np.ndarray, width: int, height: int) -> List[OCRToken]:
-        """Execute ultra-fast EasyOCR text detection and recognition optimized for 2-4 second response times."""
-        # Optimal 680px canvas and batch_size 2 for low RAM environments (Render 512MB)
-        optimal_canvas = min(680, max(width, height))
-        raw_results = self.reader.readtext(
-            img_rgb,
-            paragraph=False,
-            canvas_size=optimal_canvas,
-            mag_ratio=1.0,
-            batch_size=2,
-            width_ths=0.7,
-            contrast_ths=0.05,     # Detect low-contrast and light stylish text
-            adjust_contrast=0.5,   # Boost contrast on stylized cards
-            text_threshold=0.50,   # Capture stylized glyphs and thin fonts
-            low_text=0.28,         # Preserve cursive flourishes
-            link_threshold=0.38,   # Link spaced letters in stylish typefaces
-            add_margin=0.10        # Prevent ascenders and descenders from being cut off
-        )
+        """Execute ultra-fast EasyOCR text detection and recognition optimized for low RAM (Render 512MB)."""
+        # Optimal 600px canvas and batch_size 1 for low RAM environments (Render 512MB limit)
+        optimal_canvas = min(600, max(width, height))
+        with torch.no_grad():
+            raw_results = self.reader.readtext(
+                img_rgb,
+                paragraph=False,
+                canvas_size=optimal_canvas,
+                mag_ratio=1.0,
+                batch_size=1,
+                width_ths=0.7,
+                contrast_ths=0.05,     # Detect low-contrast and light stylish text
+                adjust_contrast=0.5,   # Boost contrast on stylized cards
+                text_threshold=0.50,   # Capture stylized glyphs and thin fonts
+                low_text=0.28,         # Preserve cursive flourishes
+                link_threshold=0.38,   # Link spaced letters in stylish typefaces
+                add_margin=0.10        # Prevent ascenders and descenders from being cut off
+            )
 
         tokens: List[OCRToken] = []
         for idx, (box, text, prob) in enumerate(raw_results):
@@ -249,6 +250,11 @@ class LocalOCRService:
         img_rgb = prep_result["preprocessed_rgb"]
         width = prep_result["width"]
         height = prep_result["height"]
+
+        # Clean up temporary prep references
+        del best_prep
+        import gc
+        gc.collect()
 
         # Append decoded QR codes as high-confidence tokens so the NLP pipeline receives verified URLs/contact data
         qr_contents = prep_result.get("qr_contents", [])

@@ -157,10 +157,14 @@ async def extract_business_card(
                     has_back_side = True
 
         # Step 2: High-Speed OCR (Low-RAM execution for Render 512MB limit)
+        import gc
         ocr = get_ocr_service()
         front_tokens, front_meta, _ = ocr.extract_from_bytes(front_bytes, rotation=rotation)
         for t in front_tokens:
             t.side = "front"
+
+        # Explicit garbage collection after front side extraction
+        gc.collect()
 
         back_tokens = []
         back_meta = None
@@ -170,21 +174,13 @@ async def extract_business_card(
                 bt.side = "back"
                 bt.id = f"token-back-{idx + 1}"
             back_tokens = b_tokens
+            gc.collect()
 
         all_tokens = front_tokens + back_tokens
 
-        # Step 3: Hybrid NLP Classification across combined tokens (Vision / SLM / Heuristics)
+        # Step 3: Hybrid NLP Classification across combined tokens (Spatial Heuristics & Rules)
         nlp = get_nlp_classifier()
-        image_bytes_list = []
-        if has_back_side and 'back_bytes' in locals() and back_bytes:
-            # Order by richer OCR token content first for faster vision early-exit
-            if len(back_tokens) > len(front_tokens):
-                image_bytes_list = [back_bytes, front_bytes]
-            else:
-                image_bytes_list = [front_bytes, back_bytes]
-        else:
-            image_bytes_list = [front_bytes]
-        structured_data = nlp.process_tokens(all_tokens, image_bytes_list=image_bytes_list)
+        structured_data = nlp.process_tokens(all_tokens)
 
         elapsed_ms = round((time.time() - start_time) * 1000, 2)
 

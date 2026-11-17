@@ -501,7 +501,7 @@ async function triggerExtraction() {
 
     hideLoading();
     renderExtractionResults(json);
-    showToast('Business Card Scanned & Structured!');
+    showToast(json.message || 'Business Card Scanned & Structured!');
   } catch (err) {
     hideLoading();
     alert(`Extraction Pipeline Notice:\n${err.message}`);
@@ -513,7 +513,7 @@ async function triggerExtraction() {
 // ---------------------------------------------------------------------------
 function renderExtractionResults(apiResponse) {
   elements.timingBadge.textContent = `${apiResponse.processing_time_ms} ms`;
-  elements.engineBadge.textContent = apiResponse.nlp_model || 'MiniCPM-V Vision';
+  elements.engineBadge.textContent = apiResponse.nlp_model || apiResponse.ocr_engine || 'Vision AI';
   elements.reviewStatusLabel.textContent = 'Scanned & Classified — Review details below';
 
   if (AppState.hasBackSide) {

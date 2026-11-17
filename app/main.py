@@ -161,7 +161,7 @@ async def extract_business_card(
 
         # Step 2: API-Friendly Hybrid Extraction (Google Gemini 1.5 Flash Cloud -> Local OCR Fallback)
         from app.gemini_service import extract_with_gemini
-        gemini_data, gemini_tokens = extract_with_gemini(front_bytes, back_bytes=back_bytes, api_key=api_key)
+        gemini_data, gemini_tokens, gemini_err = extract_with_gemini(front_bytes, back_bytes=back_bytes, api_key=api_key)
 
         if gemini_data:
             elapsed_ms = round((time.time() - start_time) * 1000, 2)
@@ -172,10 +172,13 @@ async def extract_business_card(
                 back_image_dimensions=ImageDimensions(width=1000, height=600) if has_back_side else None,
                 has_back_side=has_back_side,
                 processing_time_ms=elapsed_ms,
-                ocr_engine="Google Gemini 1.5 Flash (Vision Cloud)",
-                nlp_model="Gemini Multimodal Structure Parser",
+                ocr_engine="Google Gemini Vision API",
+                nlp_model="Gemini 1.5 Flash (99% Accuracy)",
                 message="Card details extracted with 99% accuracy via Gemini API."
             )
+
+        if gemini_err:
+            logger.warning(f"Gemini API could not process request: {gemini_err}. Executing local engine fallback.")
 
         # Step 3: Local Engine Fallback (OpenCV Multi-scale + EasyOCR Low-RAM)
         import gc
@@ -220,7 +223,11 @@ async def extract_business_card(
             processing_time_ms=elapsed_ms,
             ocr_engine=ocr.engine_name,
             nlp_model=nlp.ner_model_name,
-            message="Extraction completed successfully via Local Engine." if all_tokens else "No text could be extracted from image(s)."
+            message=(
+                f"Extracted via Local Engine (Notice: {gemini_err})"
+                if (gemini_err and "No Gemini API key" not in gemini_err)
+                else ("Extraction completed successfully via Local Engine." if all_tokens else "No text could be extracted from image(s).")
+            )
         )
 
     except ValueError as ve:

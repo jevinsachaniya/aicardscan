@@ -71,50 +71,39 @@ def discover_active_model(key: str) -> Tuple[str, str, Optional[str]]:
     if key in _CACHED_MODELS:
         return _CACHED_MODELS[key][0], _CACHED_MODELS[key][1], None
 
+    # Primary models: gemini-3-flash-preview preferred, gemini-3.1-flash-lite-preview as backup
+    preferred_models = ["gemini-3-flash-preview", "gemini-3.1-flash-lite-preview"]
+
     for api_ver in ["v1beta", "v1"]:
         list_url = f"https://generativelanguage.googleapis.com/{api_ver}/models?key={key}"
         try:
             res = requests.get(list_url, timeout=6)
             if res.status_code == 200:
                 models = res.json().get("models", [])
+                avail_names = [m.get("name", "").replace("models/", "") for m in models]
 
-                # Priority 1: Flash models (fastest & best for OCR vision, avoid 8b)
-                for m in models:
-                    m_name = m.get("name", "")
-                    methods = m.get("supportedGenerationMethods", [])
-                    if "generateContent" in methods and "flash" in m_name.lower() and "8b" not in m_name.lower():
-                        clean_name = m_name.replace("models/", "")
-                        _CACHED_MODELS[key] = (api_ver, clean_name)
+                # Check preferred models first
+                for pref in preferred_models:
+                    if pref in avail_names:
+                        _CACHED_MODELS[key] = (api_ver, pref)
                         logger.info(f"Discovered active Gemini model: {_CACHED_MODELS[key]}")
-                        return api_ver, clean_name, None
+                        return api_ver, pref, None
 
-                # Priority 2: Any flash model
-                for m in models:
-                    m_name = m.get("name", "")
-                    methods = m.get("supportedGenerationMethods", [])
-                    if "generateContent" in methods and "flash" in m_name.lower():
-                        clean_name = m_name.replace("models/", "")
-                        _CACHED_MODELS[key] = (api_ver, clean_name)
-                        return api_ver, clean_name, None
-
-                # Priority 3: Any generateContent model
-                for m in models:
-                    m_name = m.get("name", "")
-                    methods = m.get("supportedGenerationMethods", [])
-                    if "generateContent" in methods:
-                        clean_name = m_name.replace("models/", "")
-                        _CACHED_MODELS[key] = (api_ver, clean_name)
-                        return api_ver, clean_name, None
+                # Priority: Any non-2.5 flash model
+                for m_name in avail_names:
+                    if "flash" in m_name.lower() and "2.5" not in m_name and "8b" not in m_name:
+                        _CACHED_MODELS[key] = (api_ver, m_name)
+                        return api_ver, m_name, None
 
             elif res.status_code in (400, 403):
                 err_msg = res.json().get("error", {}).get("message", res.text[:150])
-                return api_ver, "gemini-2.5-flash", f"Auth Error ({res.status_code}): {err_msg}"
+                return api_ver, "gemini-3-flash-preview", f"Auth Error ({res.status_code}): {err_msg}"
 
         except Exception as e:
             logger.warning(f"Model discovery on {api_ver} notice: {e}")
 
-    # Fallback to gemini-2.5-flash
-    return "v1beta", "gemini-2.5-flash", None
+    # Fallback to gemini-3-flash-preview
+    return "v1beta", "gemini-3-flash-preview", None
 
 
 def _call_gemini_api(
@@ -177,11 +166,11 @@ def _call_gemini_api(
         }
     }
 
-    # Model candidates: primary discovered model first, then ultra-fast fallback models
-    candidates_to_try = [model_name]
-    for alt in ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"]:
-        if alt not in candidates_to_try:
-            candidates_to_try.append(alt)
+    # Model candidates: gemini-3-flash-preview first, gemini-3.1-flash-lite-preview fallback (NO 2.5-flash)
+    candidates_to_try = []
+    for cand in [model_name, "gemini-3-flash-preview", "gemini-3.1-flash-lite-preview", "gemini-flash-latest"]:
+        if cand and cand not in candidates_to_try and "2.5" not in cand:
+            candidates_to_try.append(cand)
 
     last_error = None
     for cand_model in candidates_to_try:
@@ -339,7 +328,7 @@ def extract_with_hierarchical_engine(
         logger.warning(f"User's custom API key failed: {u_err}. Falling back to Default System API Key...")
 
     # -------------------------------------------------------------------------
-    # Tier 2: Built-in Default System Cloud AI (Gemini 2.5 Flash)
+    # Tier 2: Built-in Default System Cloud AI (Gemini 3 Flash)
     # -------------------------------------------------------------------------
     default_key = get_default_api_key()
     if default_key:
@@ -350,8 +339,8 @@ def extract_with_hierarchical_engine(
                 d_data,
                 d_tokens,
                 "default_api",
-                "Default Cloud AI (Gemini 2.5 Flash)",
-                "Extracted using built-in Default Cloud AI (Gemini 2.5 Flash)."
+                "Default Cloud AI (Gemini 3 Flash)",
+                "Extracted using built-in Gemini 3 Flash Vision AI."
             )
         logger.warning(f"Default System API Key reached limit or error: {d_err}. Triggering Local Engine Fallback...")
         limit_note = f"Default API limit reached / error ({d_err}) — automatically processed via Local Offline Engine."

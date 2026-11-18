@@ -9,8 +9,17 @@ Features:
 """
 import uuid
 import re
+import os
 import logging
+import warnings
 import numpy as np
+
+# Suppress PyTorch and third-party deprecation / user warnings to keep production logs clean
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+os.environ["PYTHONWARNINGS"] = "ignore"
+
 import torch
 from typing import List, Tuple, Dict, Any, Optional
 

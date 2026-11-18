@@ -5,8 +5,15 @@ Zero third-party APIs: 100% on-device OCR and NLP pipeline.
 import os
 import time
 import logging
+import warnings
 from contextlib import asynccontextmanager
 from typing import List, Optional
+
+# Suppress PyTorch and third-party deprecation / user warnings to keep production logs clean
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+os.environ["PYTHONWARNINGS"] = "ignore"
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware

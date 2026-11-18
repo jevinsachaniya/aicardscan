@@ -1,50 +1,61 @@
-const CACHE_NAME = 'cardscan-pro-v1';
-const ASSETS = [
+/**
+ * CardScan Pro - High Reliability Network-First Service Worker
+ * Ensures users always see the latest updated UI immediately while supporting offline fallback
+ */
+
+const CACHE_NAME = 'cardscan-pro-v3';
+const ASSETS_TO_CACHE = [
   '/',
-  '/static/style.css',
-  '/static/app.js',
-  '/static/favicon.svg',
+  '/static/style.css?v=3.0',
+  '/static/app.js?v=3.0',
   '/static/manifest.json',
+  '/static/favicon.svg',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS).catch((err) => console.log('PWA cache notice:', err));
-    })
-  );
+  // Activate immediately without waiting for old worker to exit
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
+      // Purge all old versions of cache
       return Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always let dynamic API calls hit the network
+  // Let API requests pass directly without caching
   if (event.request.url.includes('/api/')) {
     return;
   }
 
+  // Network-First Strategy: Fetch newest updates live from server
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return (
-        cachedResponse ||
-        fetch(event.request).catch(() => {
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Only if mobile device is offline, load from cache
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
           if (event.request.mode === 'navigate') {
             return caches.match('/');
           }
-        })
-      );
-    })
+        });
+      })
   );
 });

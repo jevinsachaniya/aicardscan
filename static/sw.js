@@ -3,11 +3,11 @@
  * Ensures users always see the latest updated UI immediately while supporting offline fallback
  */
 
-const CACHE_NAME = 'cardscan-pro-v3';
+const CACHE_NAME = 'cardscan-pro-v3.2';
 const ASSETS_TO_CACHE = [
   '/',
-  '/static/style.css?v=3.0',
-  '/static/app.js?v=3.0',
+  '/static/style.css?v=3.2',
+  '/static/app.js?v=3.2',
   '/static/manifest.json',
   '/static/favicon.svg',
   '/static/icons/icon-192.png',

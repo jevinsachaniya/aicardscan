@@ -53,7 +53,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <!-- Clean Theme Stylesheet -->
-  <link rel="stylesheet" href="/static/style.css?v=3.0">
+  <link rel="stylesheet" href="/static/style.css?v=3.4">
 </head>
 <body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
 
@@ -190,15 +190,15 @@
   <!-- ======================================================================
        MAIN APP WORKSPACE
        ====================================================================== -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 space-y-6">
 
     <!-- ------------------------------------------------------------------
          PAGE 1: SCANNER WORKSPACE
          ------------------------------------------------------------------ -->
-    <div id="section-scan-workspace" class="page-view active grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div id="section-scan-workspace" class="page-view active w-full grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6">
       
       <!-- LEFT COLUMN: Card Upload & Camera Viewport (5 Columns on Desktop) -->
-      <div class="lg:col-span-5 bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+      <div class="w-full lg:col-span-5 bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
         
         <div class="flex items-center justify-between">
           <div>
@@ -208,8 +208,8 @@
           <span id="badge-side-status" class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Front Side</span>
         </div>
 
-        <!-- Card Preview & Drop Area (Proportioned for Desktop & Mobile) -->
-        <div id="card-drop-viewport" class="relative w-full h-44 sm:h-48 md:h-52 max-w-md mx-auto rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 hover:border-blue-500 overflow-hidden flex flex-col items-center justify-center p-3 transition cursor-pointer group">
+        <!-- Card Preview & Drop Area (Full Card Width) -->
+        <div id="card-drop-viewport" class="relative w-full h-44 sm:h-48 md:h-52 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 hover:border-blue-500 overflow-hidden flex flex-col items-center justify-center p-3 transition cursor-pointer group">
           
           <!-- Empty State Graphic -->
           <div id="preview-placeholder" class="text-center space-y-2 pointer-events-none">
@@ -232,10 +232,10 @@
         </div>
 
         <!-- Quick Side Switcher & Rotation Toolbar -->
-        <div class="flex items-center justify-between text-xs pt-1">
+        <div class="flex items-center justify-between gap-1.5 text-xs pt-1">
           <div class="flex items-center gap-1.5">
-            <button id="btn-show-front" type="button" class="px-3 py-1.5 rounded-lg font-bold bg-blue-600 text-white transition">Front Side</button>
-            <button id="btn-show-back" type="button" class="px-3 py-1.5 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Back Side (Optional)</button>
+            <button id="btn-show-front" type="button" class="px-2.5 sm:px-3 py-1.5 rounded-lg font-bold bg-blue-600 text-white transition">Front Side</button>
+            <button id="btn-show-back" type="button" class="px-2.5 sm:px-3 py-1.5 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Back Side</button>
           </div>
           <div class="flex items-center gap-1">
             <button id="btn-rotate-card" type="button" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Rotate Card 90°">
@@ -279,7 +279,7 @@
       </div>
 
       <!-- RIGHT COLUMN: Contact Details & Quick Actions (7 Columns on Desktop) -->
-      <div class="lg:col-span-7 bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm space-y-6">
+      <div class="w-full lg:col-span-7 bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-sm space-y-5 sm:space-y-6">
         
         <!-- Contact Profile Hero -->
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 pb-4 border-b border-slate-100">
@@ -661,6 +661,6 @@
   </div>
 
   <!-- Client Application Engine Logic -->
-  <script src="/static/app.js?v=3.3"></script>
+  <script src="/static/app.js?v=3.4"></script>
 </body>
 </html>

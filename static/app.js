@@ -212,6 +212,7 @@ function switchMobileTab(tabKey) {
     if (btnSettings) btnSettings.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
     if (secSettings) secSettings.classList.add('active');
   }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ---------------------------------------------------------------------------
@@ -560,7 +561,7 @@ function saveCurrentFormToVault() {
       officePhone,
       email: email ? [email] : [],
       address,
-      website: website ? [website] : [];
+      website: website ? [website] : [],
       notes,
       photoDataUrl: AppState.frontDataUrl || '',
       scannedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

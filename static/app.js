@@ -140,6 +140,19 @@ document.addEventListener('DOMContentLoaded', () => {
   checkBackendHealth();
   renderHomeView();
   renderContactsView();
+
+  // Support direct view navigation via URL parameter e.g. ?view=contacts, ?view=detail, ?view=settings
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedView = urlParams.get('view');
+  if (requestedView) {
+    if (requestedView === 'detail') {
+      const cardId = urlParams.get('id') || (AppState.scannedCards[0] && AppState.scannedCards[0].id);
+      if (cardId) openCardDetail(cardId);
+      else switchView('home');
+    } else {
+      switchView(requestedView);
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -409,6 +422,19 @@ function toggleFavorite(id) {
   saveCardsToStorage();
   renderHomeView();
   renderContactsView();
+
+  // Support direct view navigation via URL parameter e.g. ?view=contacts, ?view=detail, ?view=settings
+  const urlParams = new URLSearchParams(window.location.search);
+  const requestedView = urlParams.get('view');
+  if (requestedView) {
+    if (requestedView === 'detail') {
+      const cardId = urlParams.get('id') || (AppState.scannedCards[0] && AppState.scannedCards[0].id);
+      if (cardId) openCardDetail(cardId);
+      else switchView('home');
+    } else {
+      switchView(requestedView);
+    }
+  }
   if (AppState.selectedCardId === id) updateDetailFavIcon(card.favorite);
   showToast(card.favorite ? 'Marked as Favorite ⭐' : 'Removed from Favorites');
 }

@@ -102,3 +102,40 @@ html, body {
   box-shadow: 0 0 12px #3b82f6, 0 0 24px #3b82f6;
   animation: scanLaserLine 2s infinite ease-in-out;
 }
+
+/* Splash Screen Styles & Animations */
+@keyframes floatCardAnim {
+  0%, 100% { transform: translateY(0px) rotate(-0.5deg); }
+  50% { transform: translateY(-7px) rotate(0.8deg); }
+}
+
+@keyframes splashLaserAnim {
+  0% { top: 8%; opacity: 0.7; }
+  50% { top: 86%; opacity: 1; }
+  100% { top: 8%; opacity: 0.7; }
+}
+
+@keyframes progressPulse {
+  0% { width: 12%; }
+  35% { width: 55%; }
+  75% { width: 88%; }
+  100% { width: 100%; }
+}
+
+.float-card {
+  animation: floatCardAnim 3.2s infinite ease-in-out;
+}
+
+.splash-laser {
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #2563eb, #60a5fa, #2563eb, transparent);
+  box-shadow: 0 0 12px #2563eb, 0 0 24px #60a5fa;
+  animation: splashLaserAnim 1.8s infinite ease-in-out;
+}
+
+.progress-loader {
+  animation: progressPulse 1.2s ease-out forwards;
+}

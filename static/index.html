@@ -58,6 +58,53 @@
 <body class="bg-[#f8fafc] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-blue-100 selection:text-blue-900">
 
   <!-- ======================================================================
+       INTERACTIVE DELIGHTFUL SPLASH SCREEN / LOADER
+       Replaces blank black screen with animated scanner & warm greeting
+       ====================================================================== -->
+  <div id="app-splash-screen" class="fixed inset-0 z-50 bg-[#f8fafc] flex flex-col items-center justify-center p-6 text-center select-none transition-opacity duration-500">
+    <div class="relative w-64 max-w-full space-y-6 flex flex-col items-center">
+      
+      <!-- Animated Floating Card Graphic with Scanning Laser -->
+      <div class="relative w-56 h-32 rounded-2xl bg-white border border-slate-200/90 shadow-xl p-3.5 flex flex-col justify-between overflow-hidden float-card">
+        <div class="flex items-center justify-between">
+          <div class="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="2"/>
+              <circle cx="8" cy="11" r="2" stroke-width="2"/>
+              <path d="M13 9h5M13 13h3" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 uppercase">Vision AI</span>
+        </div>
+
+        <div class="space-y-1 text-left">
+          <div class="w-24 h-2.5 rounded bg-slate-200 animate-pulse"></div>
+          <div class="w-16 h-2 rounded bg-slate-100"></div>
+          <div class="w-32 h-1.5 rounded bg-slate-100"></div>
+        </div>
+
+        <!-- Laser Beam scanning back and forth across the card -->
+        <div class="splash-laser"></div>
+      </div>
+
+      <!-- Brand Title & Rotating Animated Status -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-center gap-2">
+          <span class="text-xl font-black text-slate-900 tracking-tight">CardScan</span>
+          <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 uppercase">Pro</span>
+        </div>
+        <p id="splash-status-text" class="text-xs font-semibold text-slate-500 h-4 transition-opacity">⚡ Waking up Vision AI Engine...</p>
+      </div>
+
+      <!-- Smooth Progress Bar -->
+      <div class="w-48 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500 rounded-full progress-loader"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================================
        TOP GLOBAL HEADER (Desktop & Mobile)
        ====================================================================== -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 lg:px-10 py-3 shadow-xs">
@@ -159,13 +206,13 @@
           <span id="badge-side-status" class="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">Front Side</span>
         </div>
 
-        <!-- Card Preview & Drop Area -->
-        <div id="card-drop-viewport" class="relative w-full aspect-[1.75/1] rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 hover:border-blue-500 overflow-hidden flex flex-col items-center justify-center p-4 transition cursor-pointer group">
+        <!-- Card Preview & Drop Area (Proportioned for Desktop & Mobile) -->
+        <div id="card-drop-viewport" class="relative w-full h-44 sm:h-48 md:h-52 max-w-md mx-auto rounded-2xl bg-slate-50 border-2 border-dashed border-slate-300 hover:border-blue-500 overflow-hidden flex flex-col items-center justify-center p-3 transition cursor-pointer group">
           
           <!-- Empty State Graphic -->
           <div id="preview-placeholder" class="text-center space-y-2 pointer-events-none">
-            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center shadow-xs group-hover:scale-105 transition">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
               </svg>
             </div>
@@ -175,8 +222,8 @@
             </div>
           </div>
 
-          <!-- Active Preview Image -->
-          <img id="card-preview-image" src="" alt="Business Card Preview" class="hidden w-full h-full object-contain transition-transform">
+          <!-- Active Preview Image (Bounded and Neatly Contained) -->
+          <img id="card-preview-image" src="" alt="Business Card Preview" class="hidden max-h-full max-w-full object-contain rounded-xl transition-transform shadow-xs">
 
           <!-- Scanning Laser Animation (during AI processing) -->
           <div id="laser-beam" class="hidden laser-beam"></div>

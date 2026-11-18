@@ -126,6 +126,29 @@ document.addEventListener('DOMContentLoaded', () => {
   if (AppState.scannedCards.length > 0) {
     populateFormWithContact(AppState.scannedCards[0]);
   }
+
+  // Handle Splash Screen Loader & Engaging Rotator
+  const splash = document.getElementById('app-splash-screen');
+  const splashText = document.getElementById('splash-status-text');
+  if (splash) {
+    const tips = [
+      '⚡ Waking up Vision AI Engine...',
+      '📷 Calibrating Neural OCR Lenses...',
+      '🚀 Loading your Contacts Vault...',
+      '✨ Ready to digitize cards!'
+    ];
+    let tipIdx = 0;
+    const interval = setInterval(() => {
+      tipIdx = (tipIdx + 1) % tips.length;
+      if (splashText) splashText.textContent = tips[tipIdx];
+    }, 350);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      splash.classList.add('opacity-0', 'pointer-events-none');
+      setTimeout(() => splash.remove(), 500);
+    }, 1100);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -204,15 +227,23 @@ function switchMobileTab(tabKey) {
   if (tabKey === 'scan') {
     if (btnScan) btnScan.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
     if (secScan) secScan.classList.add('active');
+    setTimeout(() => {
+      secScan?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   } else if (tabKey === 'contacts') {
     if (btnContacts) btnContacts.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
     if (secContacts) secContacts.classList.add('active');
     renderVault();
+    setTimeout(() => {
+      secContacts?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   } else if (tabKey === 'settings') {
     if (btnSettings) btnSettings.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
     if (secSettings) secSettings.classList.add('active');
+    setTimeout(() => {
+      secSettings?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ---------------------------------------------------------------------------
@@ -679,6 +710,9 @@ function renderVault() {
       cardEl.onclick = () => {
         populateFormWithContact(card);
         switchMobileTab('scan');
+        setTimeout(() => {
+          document.getElementById('form-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 120);
       };
 
       cardEl.innerHTML = `

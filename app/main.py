@@ -77,7 +77,9 @@ app.add_middleware(
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    """Return empty 204 response for browser favicon request."""
+    """Serve the multi-resolution application favicon."""
+    if os.path.exists("static/favicon.ico"):
+        return FileResponse("static/favicon.ico", media_type="image/x-icon")
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

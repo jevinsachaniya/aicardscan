@@ -3,15 +3,18 @@
  * Ensures users always see the latest updated UI immediately while supporting offline fallback
  */
 
-const CACHE_NAME = 'cardscan-pro-v3.4';
+const CACHE_NAME = 'cardscan-pro-v3.5';
 const ASSETS_TO_CACHE = [
   '/',
   '/static/style.css?v=3.4',
   '/static/app.js?v=3.4',
-  '/static/manifest.json',
-  '/static/favicon.svg',
+  '/static/manifest.json?v=3.5',
+  '/static/favicon.png?v=3.5',
+  '/static/icons/app-logo.png?v=3.5',
   '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png'
+  '/static/icons/icon-512.png',
+  '/static/icons/icon-512-maskable.png',
+  '/static/icons/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {

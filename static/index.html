@@ -651,28 +651,35 @@
         <div class="flex items-center space-x-2">
           <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">⚡</div>
           <div>
-            <h3 class="text-sm font-bold text-slate-900">AI Vision API Settings</h3>
-            <p class="text-[11px] text-slate-500">Enable 99% accurate extraction & full addresses</p>
+            <h3 class="text-sm font-bold text-slate-900">AI Vision Engine Settings</h3>
+            <p class="text-[11px] text-slate-500">System Default Key & Personal API Key Management</p>
           </div>
         </div>
         <button id="close-api-key-modal" type="button" class="text-slate-400 hover:text-slate-600 text-lg leading-none p-1">&times;</button>
       </div>
       <div class="p-4 sm:p-5 space-y-3">
+        <!-- Active Status Banner -->
+        <div id="api-active-status-box" class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2">
+          <span id="api-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+          <span id="api-active-status-text"><strong>Status:</strong> Using built-in Default Cloud AI (Gemini 2.5 Flash). No key required!</span>
+        </div>
+
         <p class="text-xs text-slate-600 leading-relaxed">
-          Enter your free <strong>Google Gemini API Key</strong> for instant, human-grade business card digitization. If left blank or if rate-limited, the system automatically falls back to the 100% free Local Engine!
+          CardScan Pro includes a <strong>built-in Default Cloud AI</strong> key. If you ever hit daily limits, or want to use your own private key, paste your personal Google Gemini API key below.
         </p>
+
         <div class="space-y-1">
-          <label class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Gemini API Key</label>
-          <input id="input-gemini-api-key" type="password" placeholder="AIzaSy..." class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
+          <label class="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Your Personal Gemini API Key (Optional)</label>
+          <input id="input-gemini-api-key" type="password" placeholder="AIzaSy... or AQ...." class="w-full text-xs font-mono px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none">
         </div>
         <div class="flex items-center justify-between text-[11px] text-slate-500">
-          <span>Get a 100% free key (1,500/day):</span>
+          <span>Get your personal free key:</span>
           <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-purple-600 hover:underline font-semibold">Google AI Studio &rarr;</a>
         </div>
       </div>
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2">
-        <button id="btn-clear-api-key" type="button" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition">Clear Key</button>
-        <button id="btn-save-api-key" type="button" class="px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition">Save Key</button>
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+        <button id="btn-clear-api-key" type="button" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition">Reset to Default API</button>
+        <button id="btn-save-api-key" type="button" class="px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-lg shadow-sm transition">Save Personal Key</button>
       </div>
     </div>
   </div>

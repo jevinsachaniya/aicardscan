@@ -159,28 +159,33 @@ async def extract_business_card(
                     back_bytes = b_b
                     has_back_side = True
 
-        # Step 2: API-Friendly Hybrid Extraction (Google Gemini 1.5 Flash Cloud -> Local OCR Fallback)
-        from app.gemini_service import extract_with_gemini
-        gemini_data, gemini_tokens, gemini_err = extract_with_gemini(front_bytes, back_bytes=back_bytes, api_key=api_key)
+        # Step 2: 3-Tier Hierarchical Engine (Tier 1: User API -> Tier 2: Default API -> Tier 3: Local Engine)
+        from app.gemini_service import extract_with_hierarchical_engine
+        cloud_data, cloud_tokens, engine_source, engine_display_name, engine_status_note = extract_with_hierarchical_engine(
+            front_bytes,
+            back_bytes=back_bytes,
+            user_api_key=api_key
+        )
 
-        if gemini_data:
+        if cloud_data:
             elapsed_ms = round((time.time() - start_time) * 1000, 2)
             return ExtractionResponse(
                 success=True,
-                data=gemini_data,
+                data=cloud_data,
                 image_dimensions=ImageDimensions(width=1000, height=600),
                 back_image_dimensions=ImageDimensions(width=1000, height=600) if has_back_side else None,
                 has_back_side=has_back_side,
                 processing_time_ms=elapsed_ms,
                 ocr_engine="Google Gemini Vision API",
-                nlp_model="Gemini 1.5 Flash (99% Accuracy)",
-                message="Card details extracted with 99% accuracy via Gemini API."
+                nlp_model=engine_display_name,
+                engine_source=engine_source,
+                engine_display_name=engine_display_name,
+                engine_status_note=engine_status_note,
+                message=engine_status_note
             )
 
-        if gemini_err:
-            logger.warning(f"Gemini API could not process request: {gemini_err}. Executing local engine fallback.")
-
         # Step 3: Local Engine Fallback (OpenCV Multi-scale + EasyOCR Low-RAM)
+        logger.info(f"Using Local Engine. Reason: {engine_status_note}")
         import gc
         ocr = get_ocr_service()
         front_tokens, front_meta, _ = ocr.extract_from_bytes(front_bytes, rotation=rotation)
@@ -223,11 +228,10 @@ async def extract_business_card(
             processing_time_ms=elapsed_ms,
             ocr_engine=ocr.engine_name,
             nlp_model=nlp.ner_model_name,
-            message=(
-                f"Extracted via Local Engine (Notice: {gemini_err})"
-                if (gemini_err and "No Gemini API key" not in gemini_err)
-                else ("Extraction completed successfully via Local Engine." if all_tokens else "No text could be extracted from image(s).")
-            )
+            engine_source="local_engine",
+            engine_display_name="Local Offline Engine",
+            engine_status_note=engine_status_note,
+            message=engine_status_note
         )
 
     except ValueError as ve:

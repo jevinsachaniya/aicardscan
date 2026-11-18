@@ -73,6 +73,9 @@ class ExtractionResponse(BaseModel):
     processing_time_ms: float
     ocr_engine: str
     nlp_model: str
+    engine_source: Optional[str] = "default_api"
+    engine_display_name: Optional[str] = "Default Cloud AI (Gemini 2.5 Flash)"
+    engine_status_note: Optional[str] = ""
     message: Optional[str] = None
 
 

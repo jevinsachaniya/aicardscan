@@ -190,11 +190,29 @@ function setupEventListeners() {
   const inputGeminiApiKey = document.getElementById('input-gemini-api-key');
   const btnSaveApiKey = document.getElementById('btn-save-api-key');
   const btnClearApiKey = document.getElementById('btn-clear-api-key');
+  const apiActiveStatusBox = document.getElementById('api-active-status-box');
+  const apiActiveStatusText = document.getElementById('api-active-status-text');
+  const apiStatusDot = document.getElementById('api-status-dot');
+
+  function refreshApiModalStatus() {
+    const existing = localStorage.getItem('gemini_api_key') || '';
+    if (inputGeminiApiKey) inputGeminiApiKey.value = existing;
+    if (apiActiveStatusBox && apiActiveStatusText) {
+      if (existing) {
+        apiActiveStatusBox.className = "p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-800 text-xs flex items-center space-x-2";
+        if (apiStatusDot) apiStatusDot.className = "w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0";
+        apiActiveStatusText.innerHTML = "<strong>Status:</strong> Using your Personal API Key.";
+      } else {
+        apiActiveStatusBox.className = "p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center space-x-2";
+        if (apiStatusDot) apiStatusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0";
+        apiActiveStatusText.innerHTML = "<strong>Status:</strong> Using built-in Default Cloud AI (Gemini 2.5 Flash). No key required!";
+      }
+    }
+  }
 
   if (btnApiKeyModal && apiKeyModal) {
     btnApiKeyModal.addEventListener('click', () => {
-      const existing = localStorage.getItem('gemini_api_key') || '';
-      if (inputGeminiApiKey) inputGeminiApiKey.value = existing;
+      refreshApiModalStatus();
       apiKeyModal.classList.remove('hidden');
     });
 
@@ -211,10 +229,10 @@ function setupEventListeners() {
         const val = inputGeminiApiKey.value.trim();
         if (val) {
           localStorage.setItem('gemini_api_key', val);
-          showToast('Gemini AI Key saved! 99% accuracy enabled.');
+          showToast('Personal Gemini Key saved! Priority 1 enabled.');
         } else {
           localStorage.removeItem('gemini_api_key');
-          showToast('API Key cleared. Using Local Engine.');
+          showToast('Reset to built-in Default Cloud AI.');
         }
         apiKeyModal.classList.add('hidden');
       });
@@ -224,7 +242,7 @@ function setupEventListeners() {
       btnClearApiKey.addEventListener('click', () => {
         localStorage.removeItem('gemini_api_key');
         inputGeminiApiKey.value = '';
-        showToast('API Key cleared. Using Local Engine.');
+        showToast('Reset to built-in Default Cloud AI.');
         apiKeyModal.classList.add('hidden');
       });
     }
@@ -513,8 +531,20 @@ async function triggerExtraction() {
 // ---------------------------------------------------------------------------
 function renderExtractionResults(apiResponse) {
   elements.timingBadge.textContent = `${apiResponse.processing_time_ms} ms`;
-  elements.engineBadge.textContent = apiResponse.nlp_model || apiResponse.ocr_engine || 'Vision AI';
-  elements.reviewStatusLabel.textContent = 'Scanned & Classified — Review details below';
+
+  const src = apiResponse.engine_source || 'default_api';
+  const displayName = apiResponse.engine_display_name || apiResponse.nlp_model || 'Vision AI';
+  elements.engineBadge.textContent = displayName;
+
+  if (src === 'user_api') {
+    elements.engineBadge.className = 'inline-flex items-center text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200';
+  } else if (src === 'default_api') {
+    elements.engineBadge.className = 'inline-flex items-center text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+  } else {
+    elements.engineBadge.className = 'inline-flex items-center text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+  }
+
+  elements.reviewStatusLabel.textContent = apiResponse.engine_status_note || apiResponse.message || 'Scanned & Classified — Review details below';
 
   if (AppState.hasBackSide) {
     elements.sideSwitcherBar.classList.remove('hidden');

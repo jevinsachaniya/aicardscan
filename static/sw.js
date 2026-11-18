@@ -1,16 +1,16 @@
 /**
- * CardScan Pro - High Reliability Network-First Service Worker
+ * Scan Karo - High Reliability Network-First Service Worker
  * Ensures users always see the latest updated UI immediately while supporting offline fallback
  */
 
-const CACHE_NAME = 'cardscan-pro-v3.5';
+const CACHE_NAME = 'scankaro-v3.6';
 const ASSETS_TO_CACHE = [
   '/',
-  '/static/style.css?v=3.4',
-  '/static/app.js?v=3.4',
-  '/static/manifest.json?v=3.5',
-  '/static/favicon.png?v=3.5',
-  '/static/icons/app-logo.png?v=3.5',
+  '/static/style.css?v=3.6',
+  '/static/app.js?v=3.6',
+  '/static/manifest.json?v=3.6',
+  '/static/favicon.png?v=3.6',
+  '/static/icons/app-logo.png?v=3.6',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
   '/static/icons/icon-512-maskable.png',

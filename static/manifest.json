@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "CardScan Pro - AI Business Card Scanner",
-  "short_name": "CardScan Pro",
-  "description": "Enterprise-grade AI business card digitizer with camera OCR, Excel export, and vCard contacts integration.",
+  "name": "Scan Karo - AI Business Card Scanner",
+  "short_name": "Scan Karo",
+  "description": "Smart AI business card digitizer with camera OCR, Excel export, and vCard contacts integration.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

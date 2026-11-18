@@ -895,7 +895,7 @@ function exportToExcel() {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Contacts');
 
-  const filename = `CardScan_Contacts_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const filename = `ScanKaro_Contacts_${new Date().toISOString().slice(0, 10)}.xlsx`;
   XLSX.writeFile(workbook, filename);
   showToast(`Excel downloaded! (${cards.length} contacts)`);
 }
@@ -925,7 +925,7 @@ function exportToCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `CardScan_Contacts_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `ScanKaro_Contacts_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('CSV file downloaded!');
@@ -992,7 +992,7 @@ function exportBatchVcf() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `CardScan_All_Contacts.vcf`;
+  a.download = `ScanKaro_All_Contacts.vcf`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('All contacts exported to Address Book (.vcf)!');

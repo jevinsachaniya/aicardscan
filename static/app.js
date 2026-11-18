@@ -198,13 +198,13 @@ function setupNavigationTabs() {
   const tabContacts = document.getElementById('tab-btn-contacts');
   const tabSettings = document.getElementById('tab-btn-settings');
 
-  tabScan?.addEventListener('click', () => switchMobileTab('scan'));
-  tabContacts?.addEventListener('click', () => switchMobileTab('contacts'));
-  tabSettings?.addEventListener('click', () => switchMobileTab('settings'));
+  tabScan?.addEventListener('click', () => switchPage('scan'));
+  tabContacts?.addEventListener('click', () => switchPage('contacts'));
+  tabSettings?.addEventListener('click', () => switchPage('settings'));
 }
 
-function switchMobileTab(tabKey) {
-  AppState.activeMobileTab = tabKey;
+function switchPage(pageKey) {
+  AppState.activeMobileTab = pageKey;
 
   const btnScan = document.getElementById('tab-btn-scan');
   const btnContacts = document.getElementById('tab-btn-contacts');
@@ -215,36 +215,35 @@ function switchMobileTab(tabKey) {
   const secSettings = document.getElementById('section-settings');
 
   // Reset tab button styles
-  [btnScan, btnContacts, btnSettings].forEach(btn => {
-    if (btn) btn.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-center transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900';
-  });
+  const baseBtn = 'page-tab-btn flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold text-center transition flex items-center justify-center gap-1.5 text-slate-600 hover:text-slate-900';
+  const activeBtn = 'page-tab-btn flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold text-center transition flex items-center justify-center gap-1.5 bg-white text-blue-700 shadow-xs';
 
-  // Hide all sections on mobile
+  if (btnScan) btnScan.className = baseBtn;
+  if (btnContacts) btnContacts.className = baseBtn;
+  if (btnSettings) btnSettings.className = baseBtn;
+
+  // Strict Separate Pages: Hide all other pages
   if (secScan) secScan.classList.remove('active');
   if (secContacts) secContacts.classList.remove('active');
   if (secSettings) secSettings.classList.remove('active');
 
-  if (tabKey === 'scan') {
-    if (btnScan) btnScan.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
+  if (pageKey === 'scan') {
+    if (btnScan) btnScan.className = activeBtn;
     if (secScan) secScan.classList.add('active');
-    setTimeout(() => {
-      secScan?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
-  } else if (tabKey === 'contacts') {
-    if (btnContacts) btnContacts.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
+  } else if (pageKey === 'contacts') {
+    if (btnContacts) btnContacts.className = activeBtn;
     if (secContacts) secContacts.classList.add('active');
     renderVault();
-    setTimeout(() => {
-      secContacts?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
-  } else if (tabKey === 'settings') {
-    if (btnSettings) btnSettings.className = 'mobile-tab-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-1.5 bg-blue-50 text-blue-700';
+  } else if (pageKey === 'settings') {
+    if (btnSettings) btnSettings.className = activeBtn;
     if (secSettings) secSettings.classList.add('active');
-    setTimeout(() => {
-      secSettings?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 60);
   }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+window.switchPage = switchPage;
+window.switchMobileTab = switchPage;
 
 // ---------------------------------------------------------------------------
 // 3. Card Preview, Upload, & Camera
@@ -513,6 +512,12 @@ async function triggerExtraction() {
     renderVault();
 
     showToast(`Digitized successfully: ${extractedContact.name || extractedContact.company || 'New Contact'}! 🎉`);
+
+    // Automatically scroll down to contact fields on mobile/desktop
+    setTimeout(() => {
+      const fieldTarget = document.getElementById('hero-name') || document.getElementById('form-name');
+      fieldTarget?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
   } catch (err) {
     console.error('Extraction error:', err);
     alert('Extraction Error: ' + err.message);
@@ -774,10 +779,13 @@ function renderVault() {
 
         <div class="flex items-center justify-between pt-2 border-t border-slate-200/80 text-xs" onclick="event.stopPropagation()">
           <span class="font-mono text-slate-700 font-semibold">${escapeHtml(phone || email || 'No direct phone')}</span>
-          <div class="flex items-center gap-2">
-            ${phone ? `<a href="tel:${phone}" class="p-2 rounded-xl bg-emerald-50 text-emerald-700">📞</a>` : ''}
-            ${phone ? `<a href="https://wa.me/${phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2 rounded-xl bg-green-50 text-green-700">💬</a>` : ''}
-            <button onclick="downloadContactVcfById('${card.id}')" class="p-2 rounded-xl bg-blue-50 text-blue-700">💾</button>
+          <div class="flex items-center gap-1.5">
+            ${phone ? `<a href="tel:${phone}" class="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition" title="Call">📞</a>` : ''}
+            ${phone ? `<a href="https://wa.me/${phone.replace(/[^0-9]/g, '')}" target="_blank" class="p-2 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition" title="WhatsApp">💬</a>` : ''}
+            <button onclick="downloadContactVcfById('${card.id}')" class="p-2 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 transition" title="Save Contact vCard">💾</button>
+            <button onclick="deleteContactById('${card.id}')" class="p-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 transition" title="Delete Contact">
+              <svg class="w-4 h-4 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
           </div>
         </div>
       `;
@@ -790,13 +798,44 @@ function deleteContactById(id) {
   const card = AppState.scannedCards.find(c => c.id === id);
   if (!card) return;
 
-  if (confirm(`Delete "${card.name || card.company}" from vault?`)) {
+  if (confirm(`Delete "${card.name || card.company || 'Contact'}"?`)) {
     AppState.scannedCards = AppState.scannedCards.filter(c => c.id !== id);
+    if (AppState.selectedCardId === id) {
+      AppState.selectedCardId = null;
+      if (AppState.scannedCards.length > 0) {
+        populateFormWithContact(AppState.scannedCards[0]);
+      } else {
+        document.getElementById('form-name').value = '';
+        document.getElementById('form-title').value = '';
+        document.getElementById('form-company').value = '';
+        document.getElementById('form-mobile').value = '';
+        document.getElementById('form-office-phone').value = '';
+        document.getElementById('form-email').value = '';
+        document.getElementById('form-website').value = '';
+        document.getElementById('form-address').value = '';
+        document.getElementById('form-notes').value = '';
+        document.getElementById('hero-name').textContent = 'New Contact';
+        document.getElementById('hero-title').textContent = 'Role / Title';
+        document.getElementById('hero-company').textContent = 'Company Name';
+        document.getElementById('hero-avatar').textContent = '+';
+      }
+    }
     saveContactsToStorage();
     renderVault();
-    showToast('Contact removed from vault.');
+    showToast('Contact deleted successfully.');
   }
 }
+
+function deleteActiveContact() {
+  if (!AppState.selectedCardId) {
+    showToast('Please select a saved contact first.');
+    return;
+  }
+  deleteContactById(AppState.selectedCardId);
+}
+
+window.deleteContactById = deleteContactById;
+window.deleteActiveContact = deleteActiveContact;
 
 function clearAllVault() {
   if (confirm('Are you sure you want to clear all contacts in the vault?')) {
@@ -1143,13 +1182,13 @@ function showToast(msg) {
   if (!toast || !txt) return;
 
   txt.textContent = msg;
-  toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-3');
+  toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4');
   toast.classList.add('opacity-100', 'translate-y-0');
 
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toast.classList.remove('opacity-100', 'translate-y-0');
-    toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-3');
+    toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
   }, 2600);
 }
 

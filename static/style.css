@@ -63,13 +63,22 @@ html, body {
   scrollbar-width: none;
 }
 
-/* Tab & View transitions */
-.tab-content {
-  display: none;
-  animation: fadeIn 0.15s ease-out;
+/* Tab & Page View Transitions (Strict Separate Pages) */
+.page-view {
+  display: none !important;
+  animation: fadeIn 0.18s ease-out;
 }
-.tab-content.active {
-  display: block;
+.page-view.active {
+  display: block !important;
+}
+#section-scan-workspace.page-view.active {
+  display: grid !important;
+}
+@media (max-width: 1023px) {
+  #section-scan-workspace.page-view.active {
+    display: flex !important;
+    flex-direction: column !important;
+  }
 }
 
 @keyframes fadeIn {

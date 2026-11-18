@@ -74,6 +74,18 @@ async def favicon():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.get("/manifest.json", include_in_schema=False)
+async def get_manifest():
+    """Return PWA Web App Manifest for store compatibility."""
+    return FileResponse("static/manifest.json", media_type="application/manifest+json")
+
+
+@app.get("/sw.js", include_in_schema=False)
+async def get_service_worker():
+    """Serve root service worker for PWA offline support & PWABuilder store readiness."""
+    return FileResponse("static/sw.js", media_type="application/javascript")
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.wemakepdf.scan.twa",
+      "sha256_cert_fingerprints": [
+        "27:0F:E0:9F:9C:99:7A:93:B3:09:28:BF:8C:AE:7D:BF:A8:D6:ED:7F:F8:58:10:B2:0E:AF:C9:C9:76:5A:EC:4B"
+      ]
+    }
+  }
+]

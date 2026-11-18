@@ -86,6 +86,12 @@ async def get_service_worker():
     return FileResponse("static/sw.js", media_type="application/javascript")
 
 
+@app.get("/.well-known/assetlinks.json", include_in_schema=False)
+async def get_assetlinks():
+    """Serve Digital Asset Links for Android Trusted Web Activity (TWA) domain verification."""
+    return FileResponse("static/.well-known/assetlinks.json", media_type="application/json")
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------

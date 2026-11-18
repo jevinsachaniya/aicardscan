@@ -117,11 +117,13 @@ async def health_check():
 
 @app.post("/api/extract", response_model=ExtractionResponse, tags=["Extraction"])
 async def extract_business_card(
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),
+    front_file: Optional[UploadFile] = File(None),
     back_file: Optional[UploadFile] = File(None),
     rotation: int = Form(0),
     back_rotation: int = Form(0),
-    api_key: Optional[str] = Form(None)
+    api_key: Optional[str] = Form(None),
+    custom_api_key: Optional[str] = Form(None)
 ):
     """
     Accepts business card image(s) (Front required, optional Back side).
@@ -132,8 +134,11 @@ async def extract_business_card(
     """
     start_time = time.time()
 
+    upload_file = file or front_file
+    effective_api_key = api_key or custom_api_key
+
     # Validate file presence
-    if not file or not file.filename:
+    if not upload_file or not upload_file.filename:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No front card image uploaded. Please provide a valid business card image."
@@ -141,7 +146,7 @@ async def extract_business_card(
 
     # Validate content type / extension
     allowed_exts = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff"}
-    ext = os.path.splitext(file.filename)[1].lower()
+    ext = os.path.splitext(upload_file.filename)[1].lower()
     if ext not in allowed_exts:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -150,7 +155,7 @@ async def extract_business_card(
 
     try:
         # Read front image bytes
-        front_bytes = await file.read()
+        front_bytes = await upload_file.read()
         if len(front_bytes) == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -182,7 +187,7 @@ async def extract_business_card(
         cloud_data, cloud_tokens, engine_source, engine_display_name, engine_status_note = extract_with_hierarchical_engine(
             front_bytes,
             back_bytes=back_bytes,
-            user_api_key=api_key
+            user_api_key=effective_api_key
         )
 
         if cloud_data:

@@ -391,13 +391,16 @@ async function triggerExtraction() {
 
   try {
     const formData = new FormData();
-    if (AppState.frontBlob) {
-      formData.append('front_file', AppState.frontBlob, 'card_front.jpg');
+    const frontImg = AppState.frontBlob || AppState.backBlob;
+    if (frontImg) {
+      formData.append('file', frontImg, 'card_front.jpg');
+      formData.append('front_file', frontImg, 'card_front.jpg');
     }
     if (AppState.backBlob) {
       formData.append('back_file', AppState.backBlob, 'card_back.jpg');
     }
     if (AppState.customApiKey) {
+      formData.append('api_key', AppState.customApiKey);
       formData.append('custom_api_key', AppState.customApiKey);
     }
 

@@ -1,34 +1,24 @@
 /* ==========================================================================
-   CardScan Pro - Mobile-First Native App Theme
-   Yellow & Dark Aesthetic Inspired by Real Professional Card Scanners
+   CardScan Pro - Modern Clean Minimal SaaS & Mobile PWA Theme
+   Flawless on Desktop Monitors, Laptops, Tablets, and Mobile Phones
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --primary-yellow: #facc15;
-  --primary-yellow-hover: #eab308;
-  --primary-yellow-dark: #ca8a04;
-  --bg-app: #121214;
-  --bg-surface: #18181b;
-  --bg-card: #222226;
-  --bg-card-hover: #27272e;
-  --border-app: #2e2e36;
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-}
-
-/* Light Theme Variables */
-body.light-theme {
-  --bg-app: #f4f4f5;
-  --bg-surface: #ffffff;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --primary-border: #bfdbfe;
+  
+  --bg-page: #f8fafc;
   --bg-card: #ffffff;
-  --bg-card-hover: #f9fafb;
-  --border-app: #e4e4e7;
-  --text-primary: #09090b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
+  --border-card: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-light: #94a3b8;
 }
 
 *, *::before, *::after {
@@ -39,17 +29,32 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
-  overflow-x: hidden;
+  min-height: 100%;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: var(--bg-app);
-  color: var(--text-primary);
+  background-color: var(--bg-page);
+  color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
-  user-select: none;
 }
 
-/* Hide scrollbars for clean mobile feel */
+/* Custom Clean Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar for tab strips */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -58,68 +63,42 @@ html, body {
   scrollbar-width: none;
 }
 
-/* View transitions */
-.app-view {
+/* Tab & View transitions */
+.tab-content {
   display: none;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  animation: fadeIn 0.15s ease-out;
 }
-
-.app-view.active {
+.tab-content.active {
   display: block;
-  opacity: 1;
-  transform: translateY(0);
 }
 
-/* Scanning beam animation in viewfinder */
-@keyframes scanLaser {
-  0% { top: 5%; opacity: 0.8; }
-  50% { top: 90%; opacity: 1; }
-  100% { top: 5%; opacity: 0.8; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.scan-beam {
+/* Button & Card Micro-interactions */
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-hover:hover {
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  border-color: #cbd5e1;
+}
+
+/* Laser scan animation for camera */
+@keyframes scanLaserLine {
+  0% { top: 10%; opacity: 0.7; }
+  50% { top: 85%; opacity: 1; }
+  100% { top: 10%; opacity: 0.7; }
+}
+
+.laser-beam {
   position: absolute;
-  left: 5%;
-  right: 5%;
+  left: 6%;
+  right: 6%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #facc15, #ffffff, #facc15, transparent);
-  box-shadow: 0 0 15px #facc15, 0 0 30px #facc15;
-  animation: scanLaser 2s infinite ease-in-out;
-}
-
-/* Shutter button pulse */
-@keyframes pulseRing {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-.shutter-ring {
-  animation: pulseRing 2.5s infinite ease-in-out;
-}
-
-/* Desktop framing wrapper */
-@media (min-width: 640px) {
-  .phone-frame {
-    max-width: 440px;
-    margin: 1.5rem auto;
-    border-radius: 2.25rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 10px #27272a, 0 0 0 12px #3f3f46;
-    overflow: hidden;
-    height: calc(100vh - 3rem);
-    display: flex;
-    flex-direction: column;
-  }
-}
-
-@media (max-width: 639px) {
-  .phone-frame {
-    width: 100vw;
-    min-height: 100vh;
-    height: 100%;
-    border-radius: 0;
-    box-shadow: none;
-  }
+  background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, #3b82f6, transparent);
+  box-shadow: 0 0 12px #3b82f6, 0 0 24px #3b82f6;
+  animation: scanLaserLine 2s infinite ease-in-out;
 }

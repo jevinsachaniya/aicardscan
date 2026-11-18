@@ -1,8 +1,9 @@
 """
 Google Gemini Vision Cloud API Integration.
 Features:
-- High-precision (99% accuracy) multi-modal business card parsing
-- Extracts Name, Job Title, Company, Phone(s), Email(s), Website(s), Full Multi-line Address, and Social Links
+- Dynamic Model Discovery: automatically queries the live Google ModelService catalog
+  to select the exact active model (e.g. gemini-1.5-flash / gemini-2.0-flash) for the user's key
+- Uses official REST API schema: inlineData and mimeType (camelCase)
 - Immediate lightweight image compression (~120KB) so API uploads take <0.1s
 - Robust JSON extraction handling markdown fences and conversational wrappers
 - Automatic graceful fallback to local OCR & heuristics on rate-limit, network error, or missing key
@@ -21,8 +22,8 @@ from app.schemas import BusinessCardData, OCRToken, BoundingBox
 
 logger = logging.getLogger(__name__)
 
-GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
-GEMINI_MODELS = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-8b"]
+# Cached discovered model so we don't query ListModels on every single card scan
+_CACHED_MODEL: Optional[Tuple[str, str]] = None
 
 
 def get_gemini_api_key() -> Optional[str]:
@@ -56,8 +57,64 @@ def compress_image_for_api(image_bytes: bytes, max_dim: int = 1024, quality: int
         logger.info(f"Compressed image for API: {len(image_bytes)/1024:.1f}KB -> {len(compressed_bytes)/1024:.1f}KB")
         return compressed_bytes
     except Exception as e:
-        logger.warning(f"Image compression for API notice: {e}")
+        logger.warning(f"Image compression notice: {e}")
         return image_bytes
+
+
+def discover_active_model(key: str) -> Tuple[str, str, Optional[str]]:
+    """
+    Queries Google ModelService.ListModels to discover the exact model enabled for this API key.
+    Returns (api_version, model_name, error_message).
+    """
+    global _CACHED_MODEL
+    if _CACHED_MODEL:
+        return _CACHED_MODEL[0], _CACHED_MODEL[1], None
+
+    for api_ver in ["v1beta", "v1"]:
+        list_url = f"https://generativelanguage.googleapis.com/{api_ver}/models?key={key}"
+        try:
+            logger.info(f"Checking available Gemini models via {api_ver}...")
+            res = requests.get(list_url, timeout=6)
+            if res.status_code == 200:
+                models = res.json().get("models", [])
+                
+                # Priority 1: Flash models (fastest & best for OCR vision)
+                for m in models:
+                    m_name = m.get("name", "")
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods and "flash" in m_name.lower() and "8b" not in m_name.lower():
+                        clean_name = m_name.replace("models/", "")
+                        _CACHED_MODEL = (api_ver, clean_name)
+                        logger.info(f"Discovered active Gemini model: {_CACHED_MODEL}")
+                        return api_ver, clean_name, None
+
+                # Priority 2: Any flash model
+                for m in models:
+                    m_name = m.get("name", "")
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods and "flash" in m_name.lower():
+                        clean_name = m_name.replace("models/", "")
+                        _CACHED_MODEL = (api_ver, clean_name)
+                        return api_ver, clean_name, None
+
+                # Priority 3: Any generateContent model (e.g. gemini-pro)
+                for m in models:
+                    m_name = m.get("name", "")
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods:
+                        clean_name = m_name.replace("models/", "")
+                        _CACHED_MODEL = (api_ver, clean_name)
+                        return api_ver, clean_name, None
+
+            elif res.status_code in (400, 403):
+                err_msg = res.json().get("error", {}).get("message", res.text[:150])
+                return api_ver, "gemini-1.5-flash", f"Auth Error ({res.status_code}): {err_msg}"
+
+        except Exception as e:
+            logger.warning(f"Model discovery on {api_ver} notice: {e}")
+
+    # Fallback to standard model
+    return "v1beta", "gemini-1.5-flash", None
 
 
 def extract_with_gemini(
@@ -74,7 +131,12 @@ def extract_with_gemini(
     if not key:
         return None, [], "No Gemini API key provided"
 
-    # Fast downscale: prevents sending 20MB raw camera photos over network
+    # Step 1: Discover active model for this API key to prevent 404 errors
+    api_ver, model_name, disc_err = discover_active_model(key)
+    if disc_err:
+        return None, [], disc_err
+
+    # Step 2: Compress camera images to ~120KB for instantaneous upload (<100ms)
     comp_front = compress_image_for_api(front_bytes, max_dim=1024, quality=80)
     comp_back = compress_image_for_api(back_bytes, max_dim=1024, quality=80) if (back_bytes and len(back_bytes) > 0) else None
 
@@ -103,10 +165,10 @@ def extract_with_gemini(
 
     parts: List[Dict[str, Any]] = [{"text": prompt_text}]
 
-    # Front image base64
+    # Front image base64 (using official Google REST schema: inlineData & mimeType)
     parts.append({
-        "inline_data": {
-            "mime_type": "image/jpeg",
+        "inlineData": {
+            "mimeType": "image/jpeg",
             "data": base64.b64encode(comp_front).decode("utf-8")
         }
     })
@@ -114,8 +176,8 @@ def extract_with_gemini(
     # Optional Back image base64
     if comp_back:
         parts.append({
-            "inline_data": {
-                "mime_type": "image/jpeg",
+            "inlineData": {
+                "mimeType": "image/jpeg",
                 "data": base64.b64encode(comp_back).decode("utf-8")
             }
         })
@@ -128,119 +190,110 @@ def extract_with_gemini(
         }
     }
 
-    last_err = None
-    for model_name in GEMINI_MODELS:
-        url = f"{GEMINI_BASE_URL}/{model_name}:generateContent?key={key}"
-        try:
-            logger.info(f"Calling Gemini Vision API model '{model_name}'...")
-            resp = requests.post(url, json=payload, timeout=20)
+    url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_name}:generateContent?key={key}"
+    try:
+        logger.info(f"Calling Gemini Vision API ({api_ver}/{model_name})...")
+        resp = requests.post(url, json=payload, timeout=15)
 
-            if resp.status_code == 200:
-                result = resp.json()
-                candidates = result.get("candidates", [])
-                if not candidates:
-                    last_err = "No candidates in Gemini response"
-                    continue
+        if resp.status_code == 200:
+            result = resp.json()
+            candidates = result.get("candidates", [])
+            if not candidates:
+                return None, [], "Empty candidates in Gemini response"
 
-                raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                if not raw_text:
-                    last_err = "Empty text in Gemini candidate"
-                    continue
+            raw_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            if not raw_text:
+                return None, [], "Empty text in Gemini response"
 
-                # Clean markdown fences or extra wrappers
-                cleaned = raw_text.strip()
-                if cleaned.startswith("```json"):
-                    cleaned = cleaned[7:]
-                elif cleaned.startswith("```"):
-                    cleaned = cleaned[3:]
-                if cleaned.endswith("```"):
-                    cleaned = cleaned[:-3]
-                cleaned = cleaned.strip()
+            # Clean markdown code fences if model returned them
+            cleaned = raw_text.strip()
+            if cleaned.startswith("```json"):
+                cleaned = cleaned[7:]
+            elif cleaned.startswith("```"):
+                cleaned = cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
 
-                first_brace = cleaned.find("{")
-                last_brace = cleaned.rfind("}")
-                if first_brace != -1 and last_brace != -1:
-                    cleaned = cleaned[first_brace:last_brace + 1]
+            first_brace = cleaned.find("{")
+            last_brace = cleaned.rfind("}")
+            if first_brace != -1 and last_brace != -1:
+                cleaned = cleaned[first_brace:last_brace + 1]
 
-                card_dict = json.loads(cleaned)
+            card_dict = json.loads(cleaned)
 
-                def clean_list(val):
-                    if isinstance(val, list):
-                        return [str(v).strip() for v in val if str(v).strip()]
-                    elif val and str(val).strip():
-                        return [str(val).strip()]
-                    return []
+            def clean_list(val):
+                if isinstance(val, list):
+                    return [str(v).strip() for v in val if str(v).strip()]
+                elif val and str(val).strip():
+                    return [str(val).strip()]
+                return []
 
-                data = BusinessCardData(
-                    name=str(card_dict.get("name") or "").strip(),
-                    title=str(card_dict.get("title") or "").strip(),
-                    company=str(card_dict.get("company") or "").strip(),
-                    phone=clean_list(card_dict.get("phone")),
-                    email=clean_list(card_dict.get("email")),
-                    website=clean_list(card_dict.get("website")),
-                    address=str(card_dict.get("address") or "").strip(),
-                    social_links=clean_list(card_dict.get("social_links")),
-                    services_or_products=clean_list(card_dict.get("services_or_products")),
-                    notes=str(card_dict.get("notes") or "").strip()
-                )
+            data = BusinessCardData(
+                name=str(card_dict.get("name") or "").strip(),
+                title=str(card_dict.get("title") or "").strip(),
+                company=str(card_dict.get("company") or "").strip(),
+                phone=clean_list(card_dict.get("phone")),
+                email=clean_list(card_dict.get("email")),
+                website=clean_list(card_dict.get("website")),
+                address=str(card_dict.get("address") or "").strip(),
+                social_links=clean_list(card_dict.get("social_links")),
+                services_or_products=clean_list(card_dict.get("services_or_products")),
+                notes=str(card_dict.get("notes") or "").strip()
+            )
 
-                # Synthetic high-confidence tokens for visual review UI
-                tokens: List[OCRToken] = []
-                tok_idx = 1
-                for cat, val in [("NAME", data.name), ("TITLE", data.title), ("COMPANY", data.company), ("ADDRESS", data.address)]:
-                    if val:
-                        tokens.append(OCRToken(
-                            id=f"token-{tok_idx}",
-                            text=val,
-                            confidence=0.99,
-                            bbox=BoundingBox(
-                                x_min=0.05, y_min=round(0.08 * tok_idx, 3),
-                                x_max=0.95, y_max=round(0.08 * tok_idx + 0.07, 3),
-                                pixel_x0=50, pixel_y0=40 * tok_idx,
-                                pixel_x1=500, pixel_y1=40 * tok_idx + 35,
-                                polygon=[]
-                            ),
-                            category=cat
-                        ))
-                        tok_idx += 1
-
-                for p in data.phone:
+            # Synthetic high-confidence tokens for visual review UI
+            tokens: List[OCRToken] = []
+            tok_idx = 1
+            for cat, val in [("NAME", data.name), ("TITLE", data.title), ("COMPANY", data.company), ("ADDRESS", data.address)]:
+                if val:
                     tokens.append(OCRToken(
-                        id=f"token-{tok_idx}", text=p, confidence=0.99,
-                        bbox=BoundingBox(x_min=0.05, y_min=0.5, x_max=0.5, y_max=0.58, pixel_x0=50, pixel_y0=250, pixel_x1=250, pixel_y1=290, polygon=[]),
-                        category="PHONE"
+                        id=f"token-{tok_idx}",
+                        text=val,
+                        confidence=0.99,
+                        bbox=BoundingBox(
+                            x_min=0.05, y_min=round(0.08 * tok_idx, 3),
+                            x_max=0.95, y_max=round(0.08 * tok_idx + 0.07, 3),
+                            pixel_x0=50, pixel_y0=40 * tok_idx,
+                            pixel_x1=500, pixel_y1=40 * tok_idx + 35,
+                            polygon=[]
+                        ),
+                        category=cat
                     ))
                     tok_idx += 1
 
-                for em in data.email:
-                    tokens.append(OCRToken(
-                        id=f"token-{tok_idx}", text=em, confidence=0.99,
-                        bbox=BoundingBox(x_min=0.05, y_min=0.6, x_max=0.5, y_max=0.68, pixel_x0=50, pixel_y0=300, pixel_x1=250, pixel_y1=340, polygon=[]),
-                        category="EMAIL"
-                    ))
-                    tok_idx += 1
+            for p in data.phone:
+                tokens.append(OCRToken(
+                    id=f"token-{tok_idx}", text=p, confidence=0.99,
+                    bbox=BoundingBox(x_min=0.05, y_min=0.5, x_max=0.5, y_max=0.58, pixel_x0=50, pixel_y0=250, pixel_x1=250, pixel_y1=290, polygon=[]),
+                    category="PHONE"
+                ))
+                tok_idx += 1
 
-                for w in data.website:
-                    tokens.append(OCRToken(
-                        id=f"token-{tok_idx}", text=w, confidence=0.99,
-                        bbox=BoundingBox(x_min=0.05, y_min=0.7, x_max=0.5, y_max=0.78, pixel_x0=50, pixel_y0=350, pixel_x1=250, pixel_y1=390, polygon=[]),
-                        category="WEBSITE"
-                    ))
-                    tok_idx += 1
+            for em in data.email:
+                tokens.append(OCRToken(
+                    id=f"token-{tok_idx}", text=em, confidence=0.99,
+                    bbox=BoundingBox(x_min=0.05, y_min=0.6, x_max=0.5, y_max=0.68, pixel_x0=50, pixel_y0=300, pixel_x1=250, pixel_y1=340, polygon=[]),
+                    category="EMAIL"
+                ))
+                tok_idx += 1
 
-                logger.info(f"Successfully parsed card with '{model_name}': Name='{data.name}', Phone={data.phone}, Email={data.email}, Address='{data.address}'")
-                return data, tokens, None
+            for w in data.website:
+                tokens.append(OCRToken(
+                    id=f"token-{tok_idx}", text=w, confidence=0.99,
+                    bbox=BoundingBox(x_min=0.05, y_min=0.7, x_max=0.5, y_max=0.78, pixel_x0=50, pixel_y0=350, pixel_x1=250, pixel_y1=390, polygon=[]),
+                    category="WEBSITE"
+                ))
+                tok_idx += 1
 
-            else:
-                err_text = resp.text[:200]
-                logger.warning(f"Model '{model_name}' HTTP {resp.status_code}: {err_text}")
-                last_err = f"HTTP {resp.status_code}: {err_text}"
-                # If 400 or 403 (invalid key / quota), no point trying other models with same key
-                if resp.status_code in (400, 403):
-                    break
+            logger.info(f"Successfully parsed card via Gemini ({model_name}): Name='{data.name}', Phone={data.phone}, Email={data.email}, Address='{data.address}'")
+            return data, tokens, None
 
-        except Exception as e:
-            logger.warning(f"Model '{model_name}' request failed: {e}")
-            last_err = str(e)
+        else:
+            err_msg = resp.text[:200]
+            logger.warning(f"Gemini API returned status {resp.status_code}: {err_msg}")
+            return None, [], f"HTTP {resp.status_code}: {err_msg}"
 
-    return None, [], last_err
+    except Exception as e:
+        logger.warning(f"Gemini API request failed: {e}")
+        return None, [], str(e)

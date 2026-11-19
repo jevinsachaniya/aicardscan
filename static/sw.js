@@ -3,15 +3,15 @@
  * Ensures users always see the latest updated UI immediately while supporting offline fallback
  */
 
-const CACHE_NAME = 'scankaro-v3.8';
+const CACHE_NAME = 'scankaro-v3.9';
 const ASSETS_TO_CACHE = [
   '/',
-  '/static/style.css?v=3.8',
-  '/static/app.js?v=3.8',
-  '/static/manifest.json?v=3.8',
-  '/static/favicon.png?v=3.8',
-  '/static/icons/app-logo.png?v=3.8',
-  '/static/icons/wemakepdf-logo.png?v=3.8',
+  '/static/style.css?v=3.9',
+  '/static/app.js?v=3.9',
+  '/static/manifest.json?v=3.9',
+  '/static/favicon.png?v=3.9',
+  '/static/icons/app-logo.png?v=3.9',
+  '/static/icons/wemakepdf-logo.png?v=3.9',
   '/static/icons/icon-192.png',
   '/static/icons/icon-512.png',
   '/static/icons/icon-512-maskable.png',

@@ -1244,3 +1244,8 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// Expose core export handlers globally for footer & buttons
+window.exportToExcel = exportToExcel;
+window.exportToCsv = exportToCsv;
+window.exportBatchVcf = exportBatchVcf;

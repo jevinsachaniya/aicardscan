@@ -146,10 +146,43 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       clearInterval(interval);
       splash.classList.add('opacity-0', 'pointer-events-none');
-      setTimeout(() => splash.remove(), 500);
+      setTimeout(() => {
+        splash.remove();
+        checkAndShowWelcomeModal();
+      }, 500);
     }, 1100);
+  } else {
+    checkAndShowWelcomeModal();
   }
 });
+
+// ---------------------------------------------------------------------------
+// Welcome Modal (Redirect from We Make PDF)
+// ---------------------------------------------------------------------------
+function checkAndShowWelcomeModal() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const isFromWeMakePdf = urlParams.get('ref') === 'wemakepdf' || urlParams.get('welcome') === '1' || document.referrer.includes('wemakepdf.com');
+  const alreadySeen = sessionStorage.getItem('seen_scan_karo_welcome');
+
+  if (isFromWeMakePdf || !alreadySeen) {
+    const modal = document.getElementById('modal-welcome');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+  }
+}
+
+function closeWelcomeModal() {
+  const modal = document.getElementById('modal-welcome');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    sessionStorage.setItem('seen_scan_karo_welcome', 'true');
+    showToast('Welcome to Scan Karo! Start by snapping or uploading a card.');
+  }
+}
+window.closeWelcomeModal = closeWelcomeModal;
 
 // ---------------------------------------------------------------------------
 // 1. Data Storage & System Health

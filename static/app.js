@@ -157,19 +157,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Welcome Modal (Redirect from We Make PDF)
+// Welcome Modal (Strictly ONLY for WeMakePDF Referral: ?ref=wemakepdf)
 // ---------------------------------------------------------------------------
 function checkAndShowWelcomeModal() {
   const urlParams = new URLSearchParams(window.location.search);
-  const isFromWeMakePdf = urlParams.get('ref') === 'wemakepdf' || urlParams.get('welcome') === '1' || document.referrer.includes('wemakepdf.com');
-  const alreadySeen = sessionStorage.getItem('seen_scan_karo_welcome');
+  const ref = (urlParams.get('ref') || '').toLowerCase().trim();
+  
+  // Strictly display only when ref=wemakepdf (or referrer is wemakepdf.com)
+  const isFromWeMakePdf = ref === 'wemakepdf' || (document.referrer && document.referrer.toLowerCase().includes('wemakepdf.com'));
 
-  if (isFromWeMakePdf || !alreadySeen) {
-    const modal = document.getElementById('modal-welcome');
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
+  // If not from WeMakePDF referral, NEVER show this dialogue
+  if (!isFromWeMakePdf) {
+    return;
+  }
+
+  const modal = document.getElementById('modal-welcome');
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
   }
 }
 
@@ -178,7 +183,12 @@ function closeWelcomeModal() {
   if (modal) {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-    sessionStorage.setItem('seen_scan_karo_welcome', 'true');
+    
+    // Clean up ?ref=wemakepdf parameter from URL smoothly without reloading
+    if (window.history && window.history.replaceState) {
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
     showToast('Welcome to Scan Karo! Start by snapping or uploading a card.');
   }
 }
